@@ -1,0 +1,19 @@
+package com.HubControl.Repo;
+
+import com.HubControl.Entity.Order;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
+import java.util.List;
+
+public interface OrderRepository extends JpaRepository<Order, Integer> {
+
+    // Fetches count of orders grouped by status for a specific store
+    // Returns a list of arrays: [Status (Enum/String), Count (Long)]
+    @Query("SELECT o.orderStatus, COUNT(o) FROM Order o WHERE o.store.storeId = :storeId GROUP BY o.orderStatus")
+    List<Object[]> countOrdersByStatus(@Param("storeId") int storeId);
+
+    @Query(value = "SELECT * FROM orders WHERE store_id = :storeId ORDER BY created_at DESC", nativeQuery = true)
+    List<Order> findOrderQueueByStoreId(@Param("storeId") int storeId);
+}
