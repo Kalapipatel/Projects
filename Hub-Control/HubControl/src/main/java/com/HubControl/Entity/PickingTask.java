@@ -15,7 +15,7 @@ public class PickingTask {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "task_status", nullable = false, length = 20)
-    private PickingTaskStatus taskStatus = PickingTaskStatus.NEW;
+    private PickingTaskStatus taskStatus = PickingTaskStatus.PROCESSING;
 
     @Column(name = "assigned_at")
     private LocalDateTime assignedAt;
@@ -28,6 +28,10 @@ public class PickingTask {
     private Order order;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "store_id", nullable = false)
+    private Store store;
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "picker_id")
     private User picker;
 
@@ -36,6 +40,17 @@ public class PickingTask {
 
     // --- Constructors ---
     public PickingTask() {}
+
+    public PickingTask(int taskId, PickingTaskStatus taskStatus, LocalDateTime assignedAt, LocalDateTime completedAt, Order order, Store store, User picker, List<PickingTaskItem> pickingTaskItems) {
+        this.taskId = taskId;
+        this.taskStatus = taskStatus;
+        this.assignedAt = assignedAt;
+        this.completedAt = completedAt;
+        this.order = order;
+        this.store = store;
+        this.picker = picker;
+        this.pickingTaskItems = pickingTaskItems;
+    }
 
     // --- Getters and Setters ---
     public int getTaskId() {
@@ -92,5 +107,13 @@ public class PickingTask {
 
     public void setPickingTaskItems(List<PickingTaskItem> pickingTaskItems) {
         this.pickingTaskItems = pickingTaskItems;
+    }
+
+    public Store getStore() {
+        return store;
+    }
+
+    public void setStore(Store store) {
+        this.store = store;
     }
 }

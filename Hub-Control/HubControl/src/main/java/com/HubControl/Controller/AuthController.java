@@ -59,12 +59,14 @@ public class AuthController {
             default: return ResponseEntity.badRequest().body("Invalid Role ID");
         }
 
-        return ResponseEntity.ok(new LoginResponse("Login Successful", targetPage, user.getUserId(),user.getUsername()));
+        int isActive = user.isActive() ? 1 : 0;
+
+        return ResponseEntity.ok(new LoginResponse("Login Successful", targetPage, user.getUserId(),user.getUsername(), user.getRole().getRoleId(), isActive));
     }
 }
 
 /*
 * john.doe@example.com / john_pass123
 * bob.brown@example.com / bob_pass123
-* lucy.king@example.com / lucy_pass123
+* lucy.king@example.com / lucy_pass123  / 14
 * */

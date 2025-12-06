@@ -36,8 +36,8 @@ public class InventoryBatch {
     @JoinColumn(name = "store_id", nullable = false)
     private Store store;
 
-    @OneToMany(mappedBy = "pickedBatch")
-    private Set<PickingTaskItem> pickedItems;
+//    @OneToMany(mappedBy = "pickedBatch")
+//    private Set<PickingTaskItem> pickedItems;
 
     // --- Constructors ---
     public InventoryBatch() {}
@@ -107,11 +107,11 @@ public class InventoryBatch {
         this.store = store;
     }
 
-    public Set<PickingTaskItem> getPickedItems() {
-        return pickedItems;
-    }
-
-    public void setPickedItems(Set<PickingTaskItem> pickedItems) {
-        this.pickedItems = pickedItems;
-    }
+//    public Set<PickingTaskItem> getPickedItems() {
+//        return pickedItems;
+//    }
+//
+//    public void setPickedItems(Set<PickingTaskItem> pickedItems) {
+//        this.pickedItems = pickedItems;
+//    }
 }

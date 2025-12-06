@@ -1,11 +1,15 @@
 package com.HubControl.Entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.Set;
 
 @Entity
 @Table(name = "products")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Product {
 
     @Id
@@ -33,15 +37,19 @@ public class Product {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "supplier_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Supplier supplier;
 
     @OneToMany(mappedBy = "product")
+    @JsonManagedReference
     private Set<Inventory> inventory;
 
     @OneToMany(mappedBy = "product")
+    @JsonIgnore
     private Set<InventoryBatch> batches;
 
     @OneToMany(mappedBy = "product")
+    @JsonIgnore
     private Set<OrderItem> orderItems;
 
     // --- Constructors ---

@@ -44,8 +44,25 @@ public class Store {
     @JsonIgnore
     private Set<Order> orders;
 
+    @OneToMany(mappedBy = "store")
+    @JsonIgnore
+    private Set<PickingTask> pickingTasks;
+
     // --- Constructors ---
     public Store() {}
+
+    public Store(int storeId, String storeName, String address, int pincode, LocalDateTime createdAt, Set<User> users, Set<Inventory> inventory, Set<InventoryBatch> batches, Set<Order> orders, Set<PickingTask> pickingTasks) {
+        this.storeId = storeId;
+        this.storeName = storeName;
+        this.address = address;
+        this.pincode = pincode;
+        this.createdAt = createdAt;
+        this.users = users;
+        this.inventory = inventory;
+        this.batches = batches;
+        this.orders = orders;
+        this.pickingTasks = pickingTasks;
+    }
 
     // --- Getters and Setters ---
     public int getStoreId() {
@@ -118,5 +135,13 @@ public class Store {
 
     public void setOrders(Set<Order> orders) {
         this.orders = orders;
+    }
+
+    public Set<PickingTask> getPickingTasks() {
+        return pickingTasks;
+    }
+
+    public void setPickingTasks(Set<PickingTask> pickingTasks) {
+        this.pickingTasks = pickingTasks;
     }
 }

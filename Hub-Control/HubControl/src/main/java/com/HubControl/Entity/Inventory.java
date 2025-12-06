@@ -1,5 +1,6 @@
 package com.HubControl.Entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
@@ -27,6 +28,7 @@ public class Inventory {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id", nullable = false)
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "inventory"}) // Fixes Serialization Error
+//    @JsonBackReference
     private Product product;
 
     @ManyToOne(fetch = FetchType.LAZY)

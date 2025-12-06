@@ -30,9 +30,9 @@ public class PickingTaskItem {
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "batch_id_picked")
-    private InventoryBatch pickedBatch;
+//    @ManyToOne(fetch = FetchType.LAZY)
+//    @JoinColumn(name = "batch_id_picked")
+//    private InventoryBatch pickedBatch;
 
     // --- Constructors ---
     public PickingTaskItem() {}
@@ -86,11 +86,11 @@ public class PickingTaskItem {
         this.product = product;
     }
 
-    public InventoryBatch getPickedBatch() {
-        return pickedBatch;
-    }
-
-    public void setPickedBatch(InventoryBatch pickedBatch) {
-        this.pickedBatch = pickedBatch;
-    }
+//    public InventoryBatch getPickedBatch() {
+//        return pickedBatch;
+//    }
+//
+//    public void setPickedBatch(InventoryBatch pickedBatch) {
+//        this.pickedBatch = pickedBatch;
+//    }
 }
