@@ -47,8 +47,15 @@ const LoginPage = ({ onNavigate }) => {
       if (response.ok) {
         // 1. Store the userId in localStorage
         if (typeof data === 'object' && data.userId) {
+            // localStorage.setItem('token', data.token || "dummy-token"); // If you use tokens
+            localStorage.setItem('role', data.redirectPage); // or however you store role
+            localStorage.setItem('roleId', data.roleId); // or however you store role
+
             localStorage.setItem('userId', data.userId);
             localStorage.setItem('managerName', data.username || 'Manager');
+            localStorage.setItem('username', data.username);
+
+            localStorage.setItem('isActive', data.isActive);
         }
 
         // 2. Navigate

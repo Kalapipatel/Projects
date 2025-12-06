@@ -1,100 +1,264 @@
-import React, { useState } from 'react';
-import { ArrowLeft, Scan, CheckCircle, MapPin, AlertTriangle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ArrowLeft, Scan, CheckCircle, XCircle, RefreshCw, AlertTriangle, MapPin, Box, AlertCircle } from 'lucide-react';
 import Button from '../ui/Button';
 
-const TaskDetailView = ({ task, onBack, onCompleteTask }) => {
-  const [items, setItems] = useState(task.items || []);
-  const [scanMode, setScanMode] = useState(false);
+const TaskDetailView = ({ task, onBack, onCompleteTask, theme }) => {
+  const isDark = theme === 'dark';
 
-  // Simulation of scanning an item
-  const handleSimulateScan = (itemId) => {
-    const updatedItems = items.map(item => 
-      item.id === itemId ? { ...item, status: 'picked' } : item
-    );
-    setItems(updatedItems);
+  // --- 1. Enums & Constants ---
+  const PICK_STATUS = {
+    PENDING: 'PENDING',
+    PICKED: 'PICKED',
+    NOTFOUND: 'NOTFOUND',
+    SUBSTITUTED: 'SUBSTITUTED'
   };
 
-  const progress = Math.round((items.filter(i => i.status === 'picked').length / items.length) * 100);
+  // --- 2. State Initialization ---
+  // We initialize local state based on props. 
+  // CRITICAL FIX: We ensure every item has a unique ID for the UI to prevent the "update all" bug.
+  const [taskItems, setTaskItems] = useState(() => {
+    return (task.pickingTaskItems || []).map((item, index) => ({
+      ...item,
+      // Safety: Use taskItemId if available, otherwise fallback to a unique string using index
+      uiId: item.taskItemId ? item.taskItemId : `temp-${index}`, 
+      // Logic: If status is PENDING, it hasn't been processed. 
+      // If it's NOT PENDING (e.g. previously saved as PICKED), we show it as completed/scanned.
+      pickStatus: item.pickStatus || PICK_STATUS.PENDING,
+      isScanned: (item.pickStatus && item.pickStatus !== PICK_STATUS.PENDING)
+    }));
+  });
+
+  const [errorMsg, setErrorMsg] = useState('');
+
+  // --- 3. Actions ---
+
+  // Handle Scan: STRICTLY updates only the item matching the ID
+  const handleScanItem = (uniqueId) => {
+    setErrorMsg(''); // Clear errors on interaction
+    setTaskItems(currentItems => 
+      currentItems.map(item => 
+        item.uiId === uniqueId ? { ...item, isScanned: true } : item
+      )
+    );
+  };
+
+  // Handle Status Selection: STRICTLY updates only the item matching the ID
+  const handleSelectStatus = (uniqueId, status) => {
+    setErrorMsg(''); // Clear errors
+    setTaskItems(currentItems => 
+      currentItems.map(item => 
+        item.uiId === uniqueId ? { ...item, pickStatus: status } : item
+      )
+    );
+  };
+
+  // Handle Completion
+  const handleFinishTask = () => {
+    // Check if any item is still PENDING
+    const pendingItems = taskItems.filter(item => item.pickStatus === PICK_STATUS.PENDING);
+
+    if (pendingItems.length > 0) {
+      setErrorMsg(`Please select item status for ${pendingItems.length} remaining item(s).`);
+      return;
+    }
+
+    // Success: Send data back
+    onCompleteTask(taskItems);
+  };
+
+  // Calculate Progress for UI Bar
+  const completedCount = taskItems.filter(i => i.pickStatus !== PICK_STATUS.PENDING).length;
+  const totalCount = taskItems.length;
+  const progress = totalCount === 0 ? 0 : Math.round((completedCount / totalCount) * 100);
+
+  // --- 4. Helper for Badges ---
+  const getStatusBadge = (status) => {
+    switch(status) {
+      case PICK_STATUS.PICKED:
+        return { icon: <CheckCircle size={18} />, color: 'text-emerald-600', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', label: 'Picked' };
+      case PICK_STATUS.NOTFOUND:
+        return { icon: <XCircle size={18} />, color: 'text-rose-600', bg: 'bg-rose-500/10', border: 'border-rose-500/20', label: 'Not Found' };
+      case PICK_STATUS.SUBSTITUTED:
+        return { icon: <RefreshCw size={18} />, color: 'text-amber-600', bg: 'bg-amber-500/10', border: 'border-amber-500/20', label: 'Substituted' };
+      default:
+        return null;
+    }
+  };
 
   return (
-    <div className="bg-slate-50 min-h-screen flex flex-col">
-      {/* Navbar for Detail View */}
-      <div className="bg-white p-4 shadow-sm flex items-center gap-3 sticky top-0 z-20">
-        <button onClick={onBack} className="p-2 -ml-2 text-slate-600">
+    <div className={`min-h-screen flex flex-col ${isDark ? 'bg-slate-950' : 'bg-slate-50'}`}>
+      
+      {/* --- Navbar: Order ID & Task ID --- */}
+      <div className={`px-4 py-3 shadow-md flex items-center gap-3 sticky top-0 z-20 border-b transition-colors
+          ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+        <button onClick={onBack} className={`p-2 -ml-2 rounded-full ${isDark ? 'text-slate-400 hover:bg-slate-800' : 'text-slate-600 hover:bg-slate-100'}`}>
           <ArrowLeft size={24} />
         </button>
         <div className="flex-1">
-          <h2 className="font-bold text-slate-800">Order #{task.orderId}</h2>
-          <div className="w-full bg-slate-200 h-2 rounded-full mt-2 overflow-hidden">
+          <div className="flex items-center gap-2 text-sm font-mono opacity-80 mb-1">
+             <span>ORD #{task.order?.orderId || '---'}</span>
+             <span className="opacity-30">|</span>
+             <span>TASK #{task.taskId || '---'}</span>
+          </div>
+          <div className={`w-full h-1.5 rounded-full overflow-hidden ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`}>
             <div 
-              className="bg-green-500 h-full transition-all duration-500" 
+              className="bg-emerald-500 h-full transition-all duration-500 ease-out" 
               style={{ width: `${progress}%` }}
             />
           </div>
         </div>
-        <span className="font-bold text-green-600 text-sm">{progress}%</span>
+        <div className="text-right">
+             <span className="block font-bold text-emerald-500">{progress}%</span>
+        </div>
       </div>
 
-      {/* Picking List */}
-      <div className="flex-1 p-4 overflow-y-auto">
-        {items.map((item) => (
-          <div 
-            key={item.id}
-            className={`p-4 mb-4 rounded-xl border-2 transition-all ${
-              item.status === 'picked' 
-                ? 'bg-green-50 border-green-200 opacity-60' 
-                : 'bg-white border-blue-100 shadow-md'
-            }`}
-          >
-            <div className="flex justify-between">
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                   <span className="bg-slate-800 text-white text-xs px-2 py-0.5 rounded">
-                     {item.location}
-                   </span>
-                   {item.fragile && (
-                     <span className="bg-red-100 text-red-600 text-xs px-2 py-0.5 rounded flex items-center gap-1">
-                       <AlertTriangle size={10} /> Fragile
-                     </span>
-                   )}
-                </div>
-                <h3 className="font-bold text-lg text-slate-800">{item.name}</h3>
-                <p className="text-slate-500 text-sm">SKU: {item.sku}</p>
+      {/* --- List of Cards --- */}
+      <div className="flex-1 p-4 overflow-y-auto pb-32 space-y-5">
+        {taskItems.map((item) => {
+          const product = item.product || {}; 
+          const isPending = item.pickStatus === PICK_STATUS.PENDING;
+          const statusStyle = getStatusBadge(item.pickStatus);
+          
+          return (
+            <div 
+              key={item.uiId} // CRITICAL: Uses unique ID for React rendering
+              className={`rounded-xl border transition-all duration-300 overflow-hidden shadow-sm relative
+                ${!isPending 
+                  ? (isDark ? 'bg-slate-900/40 border-slate-800 opacity-60' : 'bg-white/60 border-slate-200 opacity-70') 
+                  : (isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200')}
+              `}
+            >
+              {/* --- Card Header: Item ID --- */}
+              <div className={`px-4 py-2 text-xs font-mono font-bold tracking-wide border-b flex justify-between items-center
+                  ${isDark ? 'bg-slate-800/50 border-slate-800 text-slate-400' : 'bg-slate-50 border-slate-100 text-slate-500'}`}>
+                <span>ITEM #{item.taskItemId}</span>
+                {!isPending && <span className="text-emerald-500 flex items-center gap-1"><CheckCircle size={12} /> DONE</span>}
               </div>
-              <div className="text-right">
-                <div className="text-2xl font-bold text-slate-800">x{item.qty}</div>
-                <div className="text-xs text-slate-500">Qty</div>
-              </div>
-            </div>
 
-            {/* Action Area */}
-            <div className="mt-4 pt-4 border-t border-dashed border-slate-200 flex gap-2">
-              {item.status === 'picked' ? (
-                <div className="w-full py-2 bg-green-100 text-green-700 rounded-lg flex items-center justify-center gap-2 font-bold">
-                  <CheckCircle size={20} /> Picked
+              {/* --- Card Body --- */}
+              <div className="p-4">
+                <div className="flex justify-between items-start mb-4">
+                  {/* Product Details */}
+                  <div className="flex-1 pr-2">
+                    <div className="flex items-center gap-2 mb-2">
+                       <span className={`text-xs px-2 py-0.5 rounded font-mono flex items-center gap-1
+                         ${isDark ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-700'}
+                       `}>
+                         <MapPin size={10} />
+                         {product.location || 'No Loc'}
+                       </span>
+                       {product.isFragile && (
+                         <span className="bg-rose-500/10 text-rose-500 text-xs px-2 py-0.5 rounded flex items-center gap-1 border border-rose-500/20">
+                           <AlertTriangle size={10} /> Fragile
+                         </span>
+                       )}
+                    </div>
+                    
+                    <h3 className={`font-bold text-lg leading-tight ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
+                      {product.name || 'Unknown Item'}
+                    </h3>
+                    <p className={`text-sm mt-1 flex items-center gap-1 font-mono ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>
+                      <Box size={12} />
+                      Prod ID: #{product.productId}
+                    </p>
+                  </div>
+
+                  {/* Quantity */}
+                  <div className="pl-4 text-right border-l border-dashed border-slate-200 dark:border-slate-800">
+                    <span className={`text-[10px] uppercase font-bold tracking-wider block mb-0.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Qty</span>
+                    <div className={`text-3xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                      {item.quantity}
+                    </div>
+                  </div>
                 </div>
-              ) : (
-                <Button 
-                  onClick={() => handleSimulateScan(item.id)}
-                  className="w-full bg-blue-600 hover:bg-blue-700 active:scale-95"
-                >
-                  <Scan size={20} /> Scan to Pick
-                </Button>
-              )}
+
+                {/* --- Interactive Area --- */}
+                <div className={`pt-4 border-t border-dashed ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
+                  
+                  {/* PHASE 1: Not Scanned Yet */}
+                  {!item.isScanned && (
+                    <Button 
+                      onClick={() => handleScanItem(item.uiId)}
+                      className="w-full bg-blue-600 hover:bg-blue-500 active:scale-95 py-3 text-sm flex items-center justify-center gap-2 transition-all shadow-blue-500/20 shadow-lg"
+                    >
+                      <Scan size={18} /> Scan Item to Start
+                    </Button>
+                  )}
+
+                  {/* PHASE 2: Scanned -> Waiting for Selection (Pending) */}
+                  {item.isScanned && isPending && (
+                    <div className="grid grid-cols-3 gap-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                        <button 
+                           onClick={() => handleSelectStatus(item.uiId, PICK_STATUS.PICKED)}
+                           className="flex flex-col items-center justify-center p-3 rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 transition-all active:scale-95"
+                        >
+                           <CheckCircle size={24} className="mb-1" />
+                           <span className="text-[10px] font-bold uppercase">Picked</span>
+                        </button>
+
+                        <button 
+                           onClick={() => handleSelectStatus(item.uiId, PICK_STATUS.NOTFOUND)}
+                           className="flex flex-col items-center justify-center p-3 rounded-lg border border-rose-500/30 bg-rose-500/10 text-rose-600 hover:bg-rose-500/20 transition-all active:scale-95"
+                        >
+                           <XCircle size={24} className="mb-1" />
+                           <span className="text-[10px] font-bold uppercase">Not Found</span>
+                        </button>
+
+                        <button 
+                           onClick={() => handleSelectStatus(item.uiId, PICK_STATUS.SUBSTITUTED)}
+                           className="flex flex-col items-center justify-center p-3 rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 transition-all active:scale-95"
+                        >
+                           <RefreshCw size={24} className="mb-1" />
+                           <span className="text-[10px] font-bold uppercase">Substitute</span>
+                        </button>
+                    </div>
+                  )}
+
+                  {/* PHASE 3: Completed (Selection Made) */}
+                  {!isPending && (
+                     <div className="flex gap-2">
+                       <div className={`flex-1 py-2.5 rounded-lg flex items-center justify-center gap-2 font-bold text-sm border ${statusStyle.bg} ${statusStyle.color} ${statusStyle.border}`}>
+                         {statusStyle.icon}
+                         {statusStyle.label}
+                       </div>
+                       {/* Allow changing mind? Optional: Add 'Undo' button here if needed */}
+                       <button 
+                          onClick={() => handleSelectStatus(item.uiId, PICK_STATUS.PENDING)}
+                          className={`px-3 rounded-lg border flex items-center justify-center transition-colors
+                             ${isDark ? 'border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800' : 'border-slate-200 text-slate-400 hover:text-slate-800 hover:bg-slate-100'}`}
+                       >
+                          <RefreshCw size={16} />
+                       </button>
+                     </div>
+                  )}
+
+                </div>
+              </div>
             </div>
+          );
+        })}
+      </div>
+
+      {/* --- Footer Action --- */}
+      <div className={`p-4 border-t sticky bottom-0 z-30 flex flex-col gap-2 ${isDark ? 'bg-slate-950 border-slate-900' : 'bg-white border-slate-100'}`}>
+        
+        {/* Error Notification */}
+        {errorMsg && (
+          <div className="flex items-center gap-2 text-rose-500 bg-rose-50 dark:bg-rose-900/20 px-4 py-2 rounded-lg text-sm font-medium animate-pulse">
+            <AlertCircle size={16} />
+            {errorMsg}
           </div>
-        ))}
-      </div>
+        )}
 
-      {/* Footer Action */}
-      <div className="p-4 bg-white border-t border-slate-200 sticky bottom-0">
         <Button 
-          variant={progress === 100 ? 'primary' : 'secondary'} 
-          className="w-full py-4 text-lg shadow-xl"
-          disabled={progress !== 100}
-          onClick={onCompleteTask}
+          variant="primary"
+          className={`w-full py-3.5 text-lg font-bold shadow-lg transition-all
+            ${progress === 100 
+                ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-500/20' 
+                : 'bg-slate-800 text-slate-200 hover:bg-slate-700'}`} // Changed: Button is always active, but performs validation
+          onClick={handleFinishTask}
         >
-          {progress === 100 ? 'Complete Order' : `${items.filter(i => i.status !== 'picked').length} Items Remaining`}
+          {progress === 100 ? 'Complete Task' : 'Pick All Items'}
         </Button>
       </div>
     </div>

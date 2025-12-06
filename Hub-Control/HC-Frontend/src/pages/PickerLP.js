@@ -1,11 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import PickerHeader from '../components/picker/PickerHeader';
 import TaskCard from '../components/picker/TaskCard';
 import TaskDetailView from '../components/picker/TaskDetailView';
-// Import the new modular components
 import RequestConfirmationModal from '../components/picker/modals/RequestConfirmationModal';
 import FinalizeOrderModal from '../components/picker/modals/FinalizeOrderModal';
-import { requestNewOrder } from '../services/pickerService';
+import { requestNewOrder, updatePickerStatus } from '../services/pickerService';
 import { Download, History, Loader2, Truck, AlertCircle } from 'lucide-react';
 
 // --- MOCK DATA ---
@@ -18,8 +17,13 @@ const MOCK_HISTORY = [
 const PickerLP = ({ onLogout }) => {
   // --- STATE ---
   const [theme, setTheme] = useState('dark');
-  const [isOnline, setIsOnline] = useState(true);
-  
+  const [user, setUser] = useState({ name: "Loading...", id: null, role: "Warehouse Associate" });
+  const [isOnline, setIsOnline] = useState(() => {
+      const storedStatus = localStorage.getItem('isActive');
+      // If storedStatus is "1", return true. Otherwise false.
+      return parseInt(storedStatus) === 1;
+  });
+
   // Data State
   const [activeTask, setActiveTask] = useState(null); 
   const [inProcessTasks, setInProcessTasks] = useState([]); 
@@ -44,6 +48,16 @@ const PickerLP = ({ onLogout }) => {
     setShowRequestModal(true);
   };
 
+  useEffect(() => {
+    const storedName = localStorage.getItem('username');
+    const storedId = localStorage.getItem('userId');
+    const roleName = localStorage.getItem('role');
+    
+    if (storedName && storedId) {
+      setUser(prev => ({ ...prev, name: storedName, id: storedId, role: roleName}));
+    }
+  }, []);
+
   const confirmAndRequest = async () => {
     setShowRequestModal(false);
     setLoading(true);
@@ -51,7 +65,7 @@ const PickerLP = ({ onLogout }) => {
     setViewMode('active'); 
 
     try {
-      const newOrder = await requestNewOrder(1); 
+      const newOrder = await requestNewOrder(user.id); 
       setActiveTask({ ...newOrder, status: 'PENDING' });
     } catch (err) {
       setError("No orders available or connection failed.");
@@ -111,6 +125,32 @@ const PickerLP = ({ onLogout }) => {
     setFinalizeTask(null); // Close Modal
   };
 
+  const handleToggleStatus = async () => {
+    if (!user.id) return;
+
+    // Calculate new status
+    const newIsOnline = !isOnline;
+    const apiStatus = newIsOnline ? 1 : 0;
+
+    // A. Optimistic Update (UI)
+    setIsOnline(newIsOnline);
+
+    try {
+        // B. API Call
+        await updatePickerStatus(user.id, apiStatus);
+        
+        // C. IMPORTANT: Update LocalStorage so refresh remembers the new state
+        localStorage.setItem('isActive', apiStatus);
+        
+        console.log(`Status updated to: ${newIsOnline ? 'Online' : 'Offline'}`);
+
+    } catch (err) {
+        // D. Revert if API fails
+        setIsOnline(!newIsOnline); 
+        alert("Failed to update status. Check connection.");
+    }
+  };
+
   // --- RENDER DETAIL VIEW ---
   if (activeTask && viewMode === 'detail') {
     return (
@@ -143,13 +183,13 @@ const PickerLP = ({ onLogout }) => {
 
       {/* --- HEADER --- */}
       <PickerHeader 
-        user={MOCK_USER} 
-        isOnline={isOnline} 
-        onToggleStatus={() => setIsOnline(!isOnline)}
-        onLogout={onLogout}
-        theme={theme}
-        onToggleTheme={toggleTheme}
-      />
+         user={user} 
+         isOnline={isOnline} 
+         onToggleStatus={handleToggleStatus} // <--- Link the function here
+         onLogout={onLogout}
+         theme={theme}
+         onToggleTheme={toggleTheme}
+       />
 
       <div className="flex-1 max-w-lg mx-auto w-full p-4 flex flex-col gap-6">
 
