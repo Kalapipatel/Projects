@@ -6,6 +6,7 @@ import com.HubControl.Repo.PickingTaskItemRepository;
 import com.HubControl.Repo.PickingTaskRepository;
 import com.HubControl.Repo.UserRepository;
 import com.HubControl.dto.PickingTaskDTO;
+import com.HubControl.dto.TaskItemDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -59,7 +60,7 @@ public class PickerServiceImpl implements PickerService {
         int generatedTaskId = savedTask.getTaskId();
 
         // after saving the task, order status will update from PENDING to PROCESSING
-        pendingToPrecessing(firstPendingOrder.getOrderId());
+        orderStatusPendingToPrecessing(firstPendingOrder.getOrderId());
 
         List<OrderItem> orderItems = firstPendingOrder.getOrderItems();
         List<PickingTaskItem> taskItems = new ArrayList<>();
@@ -79,6 +80,7 @@ public class PickerServiceImpl implements PickerService {
         task.setAssignedAt(LocalDateTime.now());
 
         // filling DTO
+        taskDTO.setTaskId(generatedTaskId);
         taskDTO.setOrderId(task.getOrder().getOrderId());
         taskDTO.setAssignedAt(task.getAssignedAt());
         taskDTO.setNoOfItem(taskItems.size());
@@ -89,11 +91,39 @@ public class PickerServiceImpl implements PickerService {
     }
 
     @Override
-    public void pendingToPrecessing(int orderId){
+    public void orderStatusPendingToPrecessing(int orderId){
         int rowsUpdated = orderRepo.updateOrderStatus(orderId, OrderStatus.PROCESSING);
 
         if (rowsUpdated == 0) {
             throw new RuntimeException("Order not found: " + orderId);
+        }
+    }
+
+    @Override
+    public List<TaskItemDTO> getTaskItems(int pickerId, int taskId){
+        List<TaskItemDTO> taskItemDTOs = new ArrayList<>();
+        List<PickingTaskItem> taskItems = pickingTaskItemRepo.findByPickingTask_TaskId(taskId);
+
+        for(PickingTaskItem item : taskItems){
+            TaskItemDTO dto = new TaskItemDTO();
+
+            dto.setTaskItemId(item.getTaskItemId());
+            dto.setProductId(item.getProduct().getProductId());
+            dto.setProductName(item.getProduct().getProductName());
+            dto.setQuantity(item.getQuantityPicked());
+
+            taskItemDTOs.add(dto);
+        }
+
+        return taskItemDTOs;
+    }
+
+    @Override
+    public void changeItemStatus(int taskId, int taskItemId, PickStatus itemStatus){
+        int rowsUpdated = pickingTaskItemRepo.updatePickStatus(taskItemId, itemStatus);
+
+        if (rowsUpdated == 0) {
+            throw new RuntimeException("Order not found: " + taskItemId);
         }
     }
 }

@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 
 public class PickingTaskDTO {
 
+    private int taskId;
     private int orderId;
     private LocalDateTime assignedAt;
     private int noOfItem;
@@ -14,7 +15,8 @@ public class PickingTaskDTO {
 
     public PickingTaskDTO(){}
 
-    public PickingTaskDTO(int orderId, LocalDateTime assignedAt, int noOfItem, String storeName, PickingTaskStatus taskStatus) {
+    public PickingTaskDTO(int taskId, int orderId, LocalDateTime assignedAt, int noOfItem, String storeName, PickingTaskStatus taskStatus) {
+        this.taskId = taskId;
         this.orderId = orderId;
         this.assignedAt = assignedAt;
         this.noOfItem = noOfItem;
@@ -22,6 +24,9 @@ public class PickingTaskDTO {
         this.taskStatus = taskStatus;
     }
 
+    public int getTaskId() {
+        return taskId;
+    }
     public int getOrderId() {
         return orderId;
     }
@@ -38,6 +43,10 @@ public class PickingTaskDTO {
         return taskStatus;
     }
 
+
+    public void setTaskId(int taskId) {
+        this.taskId = taskId;
+    }
     public void setOrderId(int orderId) {
         this.orderId = orderId;
     }
