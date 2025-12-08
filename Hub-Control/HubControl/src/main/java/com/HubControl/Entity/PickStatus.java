@@ -3,6 +3,7 @@ package com.HubControl.Entity;
 public enum PickStatus {
     PENDING,
     PICKED,
-    NOT_FOUND,
+    NOTFOUND,
     SUBSTITUTED
+
 }
