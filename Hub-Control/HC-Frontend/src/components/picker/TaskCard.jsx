@@ -12,9 +12,6 @@ const TaskCard = ({ task, onSelect, theme }) => {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
-  // Calculate total items (sum of quantities)
-  const totalItems = task.pickingTaskItems?.reduce((acc, item) => acc + item.quantity, 0) || 0;
-
   return (
     <div 
       onClick={() => onSelect(task)}
@@ -27,15 +24,15 @@ const TaskCard = ({ task, onSelect, theme }) => {
     >
       <div className="flex justify-between items-start mb-3">
         <div>
-          {/* Accessing nested order object */}
+          {/* UPDATED: Reading directly from flattened DTO */}
           <h3 className={`text-lg font-bold ${isDark ? 'text-white' : 'text-slate-800'}`}>
-            #{task.order?.orderId || 'Unknown'}
+            #{task.orderId || 'Unknown'} ({task.taskId || 'Unknown'})
           </h3>
           <span className={`text-xs flex items-center gap-1 mt-1 ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>
             <Clock size={12} /> {formatTime(task.assignedAt)}
           </span>
         </div>
-        {/* Mapping Java Enum to Badge Type */}
+        
         <StatusBadge 
           status={task.taskStatus} 
           type={task.taskStatus === 'COMPLETED' ? 'success' : 'warning'} 
@@ -45,12 +42,14 @@ const TaskCard = ({ task, onSelect, theme }) => {
       <div className="flex items-center gap-3 text-sm">
         <div className={`flex items-center gap-1.5 px-2 py-1 rounded ${isDark ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-600'}`}>
           <Box size={14} className="text-blue-500" />
-          <span className="font-semibold">{totalItems} Items</span>
+          {/* UPDATED: Reading 'noOfItem' directly instead of reducing an array */}
+          <span className="font-semibold">{task.noOfItem} Items</span>
         </div>
-        {/* You can add Zone logic here if your backend provides it, otherwise remove or mock */}
+        
         <div className={`flex items-center gap-1.5 px-2 py-1 rounded ${isDark ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-600'}`}>
           <MapPin size={14} className="text-orange-500" />
-          <span>Warehouse</span>
+          {/* UPDATED: Reading 'storeName' directly */}
+          <span>{task.storeName || "Warehouse"}</span>
         </div>
       </div>
 

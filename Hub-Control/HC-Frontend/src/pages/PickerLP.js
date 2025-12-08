@@ -1,33 +1,30 @@
 import React, { useState, useEffect } from 'react';
 import PickerHeader from '../components/picker/PickerHeader';
-import TaskCard from '../components/picker/TaskCard';
-import TaskDetailView from '../components/picker/TaskDetailView';
+import TaskCard from '../components/picker/TaskCard'; 
+import TaskDetailView from '../components/picker/TaskDetailView'; 
 import RequestConfirmationModal from '../components/picker/modals/RequestConfirmationModal';
 import FinalizeOrderModal from '../components/picker/modals/FinalizeOrderModal';
-import { requestNewOrder, updatePickerStatus } from '../services/pickerService';
+import { requestNewOrder, updatePickerStatus, startPickingTask } from '../services/pickerService'; 
 import { Download, History, Loader2, Truck, AlertCircle } from 'lucide-react';
 
-// --- MOCK DATA ---
-const MOCK_USER = { name: "Alex Picker", role: "Warehouse Associate" };
-const MOCK_HISTORY = [
-  { id: 101, orderId: "ORD-5521", status: "COMPLETED", totalItems: 3, zone: "A", timeAssigned: "09:30 AM" },
-  { id: 102, orderId: "ORD-5524", status: "COMPLETED", totalItems: 1, zone: "C", timeAssigned: "10:15 AM" }
-];
+// --- CONSTANTS ---
+const STORE_ID = 1; // Default Store ID
 
 const PickerLP = ({ onLogout }) => {
   // --- STATE ---
   const [theme, setTheme] = useState('dark');
   const [user, setUser] = useState({ name: "Loading...", id: null, role: "Warehouse Associate" });
+  
   const [isOnline, setIsOnline] = useState(() => {
       const storedStatus = localStorage.getItem('isActive');
-      // If storedStatus is "1", return true. Otherwise false.
       return parseInt(storedStatus) === 1;
   });
 
   // Data State
   const [activeTask, setActiveTask] = useState(null); 
+  const [activeTaskItems, setActiveTaskItems] = useState([]); 
   const [inProcessTasks, setInProcessTasks] = useState([]); 
-  const [taskHistory, setTaskHistory] = useState(MOCK_HISTORY);
+  const [taskHistory, setTaskHistory] = useState([]);
   
   // UI State
   const [viewMode, setViewMode] = useState('active'); // 'active' | 'in-process' | 'history' | 'detail'
@@ -42,12 +39,7 @@ const PickerLP = ({ onLogout }) => {
   const toggleTheme = () => setTheme(prev => prev === 'dark' ? 'light' : 'dark');
   const isDark = theme === 'dark';
 
-  // 1. Request Order
-  const initiateRequest = () => {
-    if (activeTask) return;
-    setShowRequestModal(true);
-  };
-
+  // Load User Data
   useEffect(() => {
     const storedName = localStorage.getItem('username');
     const storedId = localStorage.getItem('userId');
@@ -58,6 +50,16 @@ const PickerLP = ({ onLogout }) => {
     }
   }, []);
 
+  // 1. Request Order
+  const initiateRequest = () => {
+    if (!isOnline) {
+        alert("You must be ONLINE to request orders.");
+        return;
+    }
+    if (activeTask) return; 
+    setShowRequestModal(true);
+  };
+
   const confirmAndRequest = async () => {
     setShowRequestModal(false);
     setLoading(true);
@@ -65,97 +67,123 @@ const PickerLP = ({ onLogout }) => {
     setViewMode('active'); 
 
     try {
-      const newOrder = await requestNewOrder(user.id); 
-      setActiveTask({ ...newOrder, status: 'PENDING' });
+      const newOrder = await requestNewOrder(user.id, STORE_ID); 
+      setActiveTask(newOrder); 
     } catch (err) {
-      setError("No orders available or connection failed.");
+      console.error(err);
+      setError(err.message || "No orders available or connection failed.");
     } finally {
       setLoading(false);
     }
   };
 
-  // 2. Picking Complete -> Move to In-Process
-  const handlePickingComplete = () => {
+  // 2. Start Picking (FETCH ITEMS)
+  const handleStartPicking = async () => {
+    if (!activeTask || !user.id) return;
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      // API CALL
+      const apiData = await startPickingTask(user.id, activeTask.taskId);
+
+      // Map Backend DTO to UI Structure
+      const mappedItems = apiData.map((dto) => ({
+        taskItemId: dto.taskItemId,
+        quantity: dto.quantity,
+        pickStatus: 'PENDING', 
+        product: {
+          productId: dto.productId,
+          name: dto.productName,
+          // Fallbacks for missing backend data
+          location: 'Rack A-00', 
+          isFragile: false 
+        }
+      }));
+
+      setActiveTaskItems(mappedItems);
+      setViewMode('detail'); 
+
+    } catch (err) {
+      console.error("Error starting task:", err);
+      setError("Failed to load task items. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 3. Toggle Status
+  const handleToggleStatus = async () => {
+    if (!user.id) return;
+
+    const newIsOnline = !isOnline;
+    const apiStatus = newIsOnline ? 1 : 0;
+
+    setIsOnline(newIsOnline);
+
+    try {
+        await updatePickerStatus(user.id, apiStatus);
+        localStorage.setItem('isActive', apiStatus);
+    } catch (err) {
+        console.error("Status update failed:", err);
+        setIsOnline(!newIsOnline); 
+        alert("Failed to update status. Check connection.");
+    }
+  };
+
+  // 4. Picking Complete
+  const handlePickingComplete = (completedItems) => {
     if (!activeTask) return;
     
-    // Set status to PROCESSING when moving to the queue
     const processingTask = { 
       ...activeTask, 
-      status: "PROCESSING", 
-      timePicked: new Date().toLocaleTimeString() 
+      taskStatus: "PROCESSING", 
+      timePicked: new Date().toLocaleTimeString(),
+      items: completedItems 
     };
 
     setInProcessTasks(prev => [processingTask, ...prev]);
     setActiveTask(null);
+    setActiveTaskItems([]); 
     setViewMode('in-process'); 
     alert("Items Picked! Order moved to In-Process."); 
   };
 
-  // 3. Finalize Order (FIXED STATUS LOGIC)
+  // 5. Finalize Order
   const handleFinalizeAction = (action) => {
     if (!finalizeTask) return;
 
     if (action === 'COMPLETED') {
-      // FIX 1: Overwrite status to COMPLETED
       const completedTask = { 
           ...finalizeTask, 
-          status: "COMPLETED", 
+          taskStatus: "COMPLETED", 
           timeCompleted: new Date().toLocaleTimeString() 
       };
 
-      // Add to History
       setTaskHistory(prev => [completedTask, ...prev]);
-      // Remove from In-Process
-      setInProcessTasks(prev => prev.filter(t => t.id !== finalizeTask.id));
-      
-      alert(`Order ${finalizeTask.orderId} marked as COMPLETED.`);
+      setInProcessTasks(prev => prev.filter(t => t.orderId !== finalizeTask.orderId));
+      alert(`Order #${finalizeTask.orderId} marked as COMPLETED.`);
     } 
     else if (action === 'ISSUE') {
-      // FIX 2: Find the specific item and overwrite status to ISSUE
       setInProcessTasks(prevTasks => prevTasks.map(task => {
-        if (task.id === finalizeTask.id) {
-            return { ...task, status: "ISSUE" }; // <--- Forced Status Update
+        if (task.orderId === finalizeTask.orderId) {
+            return { ...task, taskStatus: "ISSUE" }; 
         }
         return task;
       }));
-      
-      alert(`Issue reported for Order ${finalizeTask.orderId}.`);
+      alert(`Issue reported for Order #${finalizeTask.orderId}.`);
     }
 
-    setFinalizeTask(null); // Close Modal
-  };
-
-  const handleToggleStatus = async () => {
-    if (!user.id) return;
-
-    // Calculate new status
-    const newIsOnline = !isOnline;
-    const apiStatus = newIsOnline ? 1 : 0;
-
-    // A. Optimistic Update (UI)
-    setIsOnline(newIsOnline);
-
-    try {
-        // B. API Call
-        await updatePickerStatus(user.id, apiStatus);
-        
-        // C. IMPORTANT: Update LocalStorage so refresh remembers the new state
-        localStorage.setItem('isActive', apiStatus);
-        
-        console.log(`Status updated to: ${newIsOnline ? 'Online' : 'Offline'}`);
-
-    } catch (err) {
-        // D. Revert if API fails
-        setIsOnline(!newIsOnline); 
-        alert("Failed to update status. Check connection.");
-    }
+    setFinalizeTask(null); 
   };
 
   // --- RENDER DETAIL VIEW ---
   if (activeTask && viewMode === 'detail') {
     return (
       <TaskDetailView 
-        task={activeTask} 
+        initialItems={activeTaskItems} 
+        taskMetadata={activeTask}      
         onBack={() => setViewMode('active')} 
         onCompleteTask={handlePickingComplete} 
         theme={theme}
@@ -185,7 +213,7 @@ const PickerLP = ({ onLogout }) => {
       <PickerHeader 
          user={user} 
          isOnline={isOnline} 
-         onToggleStatus={handleToggleStatus} // <--- Link the function here
+         onToggleStatus={handleToggleStatus} 
          onLogout={onLogout}
          theme={theme}
          onToggleTheme={toggleTheme}
@@ -197,10 +225,10 @@ const PickerLP = ({ onLogout }) => {
         <div className="grid grid-cols-3 gap-3">
           <NavButton 
             active={viewMode === 'active'} 
-            onClick={() => { setViewMode('active'); initiateRequest(); }} 
+            onClick={() => { setViewMode('active'); }} 
             icon={<Download size={20} />} 
             label="Request" 
-            loading={loading}
+            loading={loading && !activeTaskItems.length}
             isDark={isDark}
           />
           <NavButton 
@@ -224,7 +252,7 @@ const PickerLP = ({ onLogout }) => {
         <div className="flex-1 pb-20">
           
           {error && (
-            <div className="bg-red-500/10 border border-red-500/20 text-red-500 p-4 rounded-xl flex items-center gap-3 mb-4">
+            <div className="bg-red-500/10 border border-red-500/20 text-red-500 p-4 rounded-xl flex items-center gap-3 mb-4 animate-pulse">
               <AlertCircle size={20} />
               <p className="text-sm font-medium">{error}</p>
             </div>
@@ -233,14 +261,45 @@ const PickerLP = ({ onLogout }) => {
           {/* 1. ACTIVE VIEW */}
           {viewMode === 'active' && (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-               <h3 className={`text-lg font-bold mb-3 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Current Pick</h3>
+               <div className="flex justify-between items-center mb-3">
+                  <h3 className={`text-lg font-bold ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Current Pick</h3>
+                  {!activeTask && (
+                     <button 
+                       onClick={initiateRequest} 
+                       className="text-xs font-bold text-blue-500 bg-blue-500/10 px-3 py-1.5 rounded-lg hover:bg-blue-500/20 transition-colors"
+                     >
+                       + NEW REQUEST
+                     </button>
+                  )}
+               </div>
+
               {activeTask ? (
-                <div onClick={() => setViewMode('detail')}> 
-                  <TaskCard task={activeTask} onSelect={() => setViewMode('detail')} theme={theme} />
-                  <p className="text-center text-xs mt-2 text-slate-500 animate-pulse">Tap card to start picking</p>
+                // FIX: Removed wrapper onClick, passed onSelect directly to TaskCard
+                <div> 
+                  {loading && activeTaskItems.length === 0 ? (
+                      <div className={`h-40 rounded-xl flex items-center justify-center ${isDark ? 'bg-slate-900' : 'bg-white'}`}>
+                          <Loader2 className="animate-spin text-blue-500" size={32} />
+                      </div>
+                  ) : (
+                      <div className="cursor-pointer hover:scale-[1.02] transition-transform">
+                        <TaskCard 
+                          task={activeTask} 
+                          theme={theme}
+                          onSelect={handleStartPicking} // FIXED: Passed function here
+                        />
+                        <p className="text-center text-xs mt-3 text-emerald-500 font-medium animate-pulse">
+                           Tap card to Start Picking Items &rarr;
+                        </p>
+                      </div>
+                  )}
                 </div>
               ) : (
-                <EmptyState icon={<Download size={24} />} title="No Active Pick" subtitle='Tap "Request" to start' isDark={isDark} />
+                <EmptyState 
+                  icon={<Download size={24} />} 
+                  title="No Active Pick" 
+                  subtitle='Tap "+ New Request" to get an order' 
+                  isDark={isDark} 
+                />
               )}
             </div>
           )}
@@ -256,10 +315,13 @@ const PickerLP = ({ onLogout }) => {
                  <EmptyState icon={<Truck size={24} />} title="No Orders in Process" isDark={isDark} />
               ) : (
                 <div className="space-y-3">
-                  {inProcessTasks.map(task => (
-                    <div key={task.id} onClick={() => setFinalizeTask(task)} className="cursor-pointer hover:scale-[1.02] transition-transform">
-                      {/* TaskCard will now receive the UPDATED status (ISSUE or PROCESSING) */}
-                      <TaskCard task={task} onSelect={() => setFinalizeTask(task)} theme={theme} />
+                  {inProcessTasks.map((task, index) => (
+                    <div key={index} className="cursor-pointer hover:scale-[1.02] transition-transform">
+                      <TaskCard 
+                        task={task} 
+                        onSelect={() => setFinalizeTask(task)} // This was already correct
+                        theme={theme} 
+                      />
                     </div>
                   ))}
                   <p className="text-center text-xs mt-4 text-slate-500">Tap an order to complete delivery or report issue</p>
@@ -273,11 +335,15 @@ const PickerLP = ({ onLogout }) => {
             <div className="animate-in fade-in slide-in-from-right-4 duration-300">
               <h3 className={`text-lg font-bold mb-3 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Completed ({taskHistory.length})</h3>
               <div className="space-y-3">
-                {taskHistory.map(task => (
-                  <div key={task.id} className="opacity-75 grayscale hover:grayscale-0 transition-all">
-                    <TaskCard task={task} onSelect={() => {}} theme={theme} />
-                  </div>
-                ))}
+                {taskHistory.length === 0 ? (
+                    <EmptyState icon={<History size={24} />} title="No History Yet" isDark={isDark} />
+                ) : (
+                    taskHistory.map((task, index) => (
+                    <div key={index} className="opacity-75 grayscale hover:grayscale-0 transition-all">
+                        <TaskCard task={task} theme={theme} />
+                    </div>
+                    ))
+                )}
               </div>
             </div>
           )}
@@ -287,7 +353,7 @@ const PickerLP = ({ onLogout }) => {
   );
 };
 
-// --- SUB-COMPONENTS (Keep these here or move to separate files if preferred) ---
+// --- SUB-COMPONENTS ---
 
 const NavButton = ({ active, onClick, icon, label, badgeCount, loading, isDark }) => (
   <button 

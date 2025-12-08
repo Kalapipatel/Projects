@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Scan, CheckCircle, XCircle, RefreshCw, AlertTriangle, MapPin, Box, AlertCircle } from 'lucide-react';
-import Button from '../ui/Button';
+import Button from '../ui/Button'; // Ensure path is correct based on your folder structure
 
-const TaskDetailView = ({ task, onBack, onCompleteTask, theme }) => {
+const TaskDetailView = ({ initialItems, taskMetadata, onBack, onCompleteTask, theme }) => {
   const isDark = theme === 'dark';
 
   // --- 1. Enums & Constants ---
@@ -14,15 +14,12 @@ const TaskDetailView = ({ task, onBack, onCompleteTask, theme }) => {
   };
 
   // --- 2. State Initialization ---
-  // We initialize local state based on props. 
-  // CRITICAL FIX: We ensure every item has a unique ID for the UI to prevent the "update all" bug.
+  // We use the passed 'initialItems' which are already mapped in PickerLP
   const [taskItems, setTaskItems] = useState(() => {
-    return (task.pickingTaskItems || []).map((item, index) => ({
+    return initialItems.map((item, index) => ({
       ...item,
-      // Safety: Use taskItemId if available, otherwise fallback to a unique string using index
+      // Ensure unique UI ID
       uiId: item.taskItemId ? item.taskItemId : `temp-${index}`, 
-      // Logic: If status is PENDING, it hasn't been processed. 
-      // If it's NOT PENDING (e.g. previously saved as PICKED), we show it as completed/scanned.
       pickStatus: item.pickStatus || PICK_STATUS.PENDING,
       isScanned: (item.pickStatus && item.pickStatus !== PICK_STATUS.PENDING)
     }));
@@ -32,9 +29,8 @@ const TaskDetailView = ({ task, onBack, onCompleteTask, theme }) => {
 
   // --- 3. Actions ---
 
-  // Handle Scan: STRICTLY updates only the item matching the ID
   const handleScanItem = (uniqueId) => {
-    setErrorMsg(''); // Clear errors on interaction
+    setErrorMsg(''); 
     setTaskItems(currentItems => 
       currentItems.map(item => 
         item.uiId === uniqueId ? { ...item, isScanned: true } : item
@@ -42,9 +38,8 @@ const TaskDetailView = ({ task, onBack, onCompleteTask, theme }) => {
     );
   };
 
-  // Handle Status Selection: STRICTLY updates only the item matching the ID
   const handleSelectStatus = (uniqueId, status) => {
-    setErrorMsg(''); // Clear errors
+    setErrorMsg(''); 
     setTaskItems(currentItems => 
       currentItems.map(item => 
         item.uiId === uniqueId ? { ...item, pickStatus: status } : item
@@ -52,21 +47,15 @@ const TaskDetailView = ({ task, onBack, onCompleteTask, theme }) => {
     );
   };
 
-  // Handle Completion
   const handleFinishTask = () => {
-    // Check if any item is still PENDING
     const pendingItems = taskItems.filter(item => item.pickStatus === PICK_STATUS.PENDING);
-
     if (pendingItems.length > 0) {
       setErrorMsg(`Please select item status for ${pendingItems.length} remaining item(s).`);
       return;
     }
-
-    // Success: Send data back
     onCompleteTask(taskItems);
   };
 
-  // Calculate Progress for UI Bar
   const completedCount = taskItems.filter(i => i.pickStatus !== PICK_STATUS.PENDING).length;
   const totalCount = taskItems.length;
   const progress = totalCount === 0 ? 0 : Math.round((completedCount / totalCount) * 100);
@@ -95,10 +84,12 @@ const TaskDetailView = ({ task, onBack, onCompleteTask, theme }) => {
           <ArrowLeft size={24} />
         </button>
         <div className="flex-1">
-          <div className="flex items-center gap-2 text-sm font-mono opacity-80 mb-1">
-             <span>ORD #{task.order?.orderId || '---'}</span>
+          <div className={`flex items-center gap-2 text-sm font-mono opacity-80 mb-1 
+            ${isDark ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-700'}`}>
+             {/* Uses taskMetadata prop now */}
+             <span>ORD #{taskMetadata?.orderId || '---'}</span>
              <span className="opacity-30">|</span>
-             <span>TASK #{task.taskId || '---'}</span>
+             <span>TASK #{taskMetadata?.taskId || '---'}</span>
           </div>
           <div className={`w-full h-1.5 rounded-full overflow-hidden ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`}>
             <div 
@@ -121,7 +112,7 @@ const TaskDetailView = ({ task, onBack, onCompleteTask, theme }) => {
           
           return (
             <div 
-              key={item.uiId} // CRITICAL: Uses unique ID for React rendering
+              key={item.uiId} 
               className={`rounded-xl border transition-all duration-300 overflow-hidden shadow-sm relative
                 ${!isPending 
                   ? (isDark ? 'bg-slate-900/40 border-slate-800 opacity-60' : 'bg-white/60 border-slate-200 opacity-70') 
@@ -145,7 +136,7 @@ const TaskDetailView = ({ task, onBack, onCompleteTask, theme }) => {
                          ${isDark ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-700'}
                        `}>
                          <MapPin size={10} />
-                         {product.location || 'No Loc'}
+                         {product.location || 'N/A'}
                        </span>
                        {product.isFragile && (
                          <span className="bg-rose-500/10 text-rose-500 text-xs px-2 py-0.5 rounded flex items-center gap-1 border border-rose-500/20">
@@ -185,7 +176,7 @@ const TaskDetailView = ({ task, onBack, onCompleteTask, theme }) => {
                     </Button>
                   )}
 
-                  {/* PHASE 2: Scanned -> Waiting for Selection (Pending) */}
+                  {/* PHASE 2: Scanned -> Waiting for Selection */}
                   {item.isScanned && isPending && (
                     <div className="grid grid-cols-3 gap-2 animate-in fade-in slide-in-from-top-2 duration-300">
                         <button 
@@ -214,22 +205,21 @@ const TaskDetailView = ({ task, onBack, onCompleteTask, theme }) => {
                     </div>
                   )}
 
-                  {/* PHASE 3: Completed (Selection Made) */}
+                  {/* PHASE 3: Completed */}
                   {!isPending && (
-                     <div className="flex gap-2">
-                       <div className={`flex-1 py-2.5 rounded-lg flex items-center justify-center gap-2 font-bold text-sm border ${statusStyle.bg} ${statusStyle.color} ${statusStyle.border}`}>
-                         {statusStyle.icon}
-                         {statusStyle.label}
-                       </div>
-                       {/* Allow changing mind? Optional: Add 'Undo' button here if needed */}
-                       <button 
+                      <div className="flex gap-2">
+                        <div className={`flex-1 py-2.5 rounded-lg flex items-center justify-center gap-2 font-bold text-sm border ${statusStyle.bg} ${statusStyle.color} ${statusStyle.border}`}>
+                          {statusStyle.icon}
+                          {statusStyle.label}
+                        </div>
+                        <button 
                           onClick={() => handleSelectStatus(item.uiId, PICK_STATUS.PENDING)}
                           className={`px-3 rounded-lg border flex items-center justify-center transition-colors
                              ${isDark ? 'border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800' : 'border-slate-200 text-slate-400 hover:text-slate-800 hover:bg-slate-100'}`}
-                       >
-                          <RefreshCw size={16} />
-                       </button>
-                     </div>
+                        >
+                           <RefreshCw size={16} />
+                        </button>
+                      </div>
                   )}
 
                 </div>
@@ -239,23 +229,19 @@ const TaskDetailView = ({ task, onBack, onCompleteTask, theme }) => {
         })}
       </div>
 
-      {/* --- Footer Action --- */}
       <div className={`p-4 border-t sticky bottom-0 z-30 flex flex-col gap-2 ${isDark ? 'bg-slate-950 border-slate-900' : 'bg-white border-slate-100'}`}>
-        
-        {/* Error Notification */}
         {errorMsg && (
           <div className="flex items-center gap-2 text-rose-500 bg-rose-50 dark:bg-rose-900/20 px-4 py-2 rounded-lg text-sm font-medium animate-pulse">
             <AlertCircle size={16} />
             {errorMsg}
           </div>
         )}
-
         <Button 
           variant="primary"
           className={`w-full py-3.5 text-lg font-bold shadow-lg transition-all
             ${progress === 100 
-                ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-500/20' 
-                : 'bg-slate-800 text-slate-200 hover:bg-slate-700'}`} // Changed: Button is always active, but performs validation
+              ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-500/20' 
+              : 'bg-slate-800 text-slate-200 hover:bg-slate-700'}`}
           onClick={handleFinishTask}
         >
           {progress === 100 ? 'Complete Task' : 'Pick All Items'}
