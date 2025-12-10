@@ -1,7 +1,7 @@
 package com.HubControl.Service;
 
 import com.HubControl.Entity.PickStatus;
-import com.HubControl.Entity.PickingTask;
+import com.HubControl.Entity.PickingTaskStatus;
 import com.HubControl.dto.PickingTaskDTO;
 import com.HubControl.dto.TaskItemDTO;
 
@@ -14,4 +14,5 @@ public interface PickerService {
     public void orderStatusPendingToPrecessing(int orderId);
     public List<TaskItemDTO> getTaskItems(int pickerId, int taskId);
     public void changeItemStatus(int taskId, int taskItemId, PickStatus itemStatus);
+    public void changeTaskStatus(int taskId, PickingTaskStatus taskStatus);
 }

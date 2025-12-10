@@ -1,10 +1,7 @@
 package com.HubControl.Service;
 
 import com.HubControl.Entity.*;
-import com.HubControl.Repo.OrderRepository;
-import com.HubControl.Repo.PickingTaskItemRepository;
-import com.HubControl.Repo.PickingTaskRepository;
-import com.HubControl.Repo.UserRepository;
+import com.HubControl.Repo.*;
 import com.HubControl.dto.PickingTaskDTO;
 import com.HubControl.dto.TaskItemDTO;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,6 +26,9 @@ public class PickerServiceImpl implements PickerService {
 
     @Autowired
     private PickingTaskItemRepository pickingTaskItemRepo;
+
+    @Autowired
+    private InventoryRepository inventoryRepo;
 
     @Override
     public void setActiveStatus(int pickerId, int isActive) {
@@ -124,6 +124,33 @@ public class PickerServiceImpl implements PickerService {
 
         if (rowsUpdated == 0) {
             throw new RuntimeException("Order not found: " + taskItemId);
+        }
+    }
+
+    @Override
+    public void changeTaskStatus(int taskId, PickingTaskStatus taskStatus){
+        int rowsUpdated = pickingTaskRepo.updateTaskStatus(taskId, taskStatus);
+
+        if (rowsUpdated == 0) {
+            throw new RuntimeException("Order not found: " + taskId);
+        }
+
+        if(taskStatus == PickingTaskStatus.COMPLETED){
+            Optional<PickingTask> optionalTask = pickingTaskRepo.findById(taskId);
+            if (optionalTask.isEmpty()) {
+                throw new RuntimeException("Manager not found with ID: " + taskId);
+            }
+            PickingTask task = optionalTask.get();
+
+            List<PickingTaskItem> taskItems = task.getPickingTaskItems();
+
+            for(PickingTaskItem item : taskItems){
+                int productId = item.getProduct().getProductId();
+                int quantityPicked = item.getQuantityPicked();
+
+                int rows = inventoryRepo.subtractQuantityFromInventory(productId, quantityPicked);
+
+            }
         }
     }
 }

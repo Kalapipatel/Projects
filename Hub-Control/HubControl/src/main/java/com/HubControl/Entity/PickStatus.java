@@ -5,5 +5,4 @@ public enum PickStatus {
     PICKED,
     NOTFOUND,
     SUBSTITUTED
-
 }

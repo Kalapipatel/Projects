@@ -1,5 +1,7 @@
 package com.HubControl.dto;
 
+import java.util.List;
+
 public class StoreDashboardDTO {
     private int pendingOrders;
     private int inProgressOrders;
@@ -7,16 +9,18 @@ public class StoreDashboardDTO {
     private int totalOrders;
     private int activePickers;
     private int totalPickers;
+    private List<AlertDTO> alerts;
 
     public StoreDashboardDTO(){}
 
-    public StoreDashboardDTO(int pendingOrders, int inProgressOrders, int completedOrders, int totalOrders, int activePickers, int totalPickers) {
+    public StoreDashboardDTO(int pendingOrders, int inProgressOrders, int completedOrders, int totalOrders, int activePickers, int totalPickers, List<AlertDTO> alerts) {
         this.pendingOrders = pendingOrders;
         this.inProgressOrders = inProgressOrders;
         this.completedOrders = completedOrders;
         this.totalOrders = totalOrders;
         this.activePickers = activePickers;
         this.totalPickers = totalPickers;
+        this.alerts = alerts;
     }
 
     public int getPendingOrders() {
@@ -55,10 +59,15 @@ public class StoreDashboardDTO {
     public void setTotalPickers(int totalPickers) {
         this.totalPickers = totalPickers;
     }
+    public List<AlertDTO> getAlerts() {
+        return alerts;
+    }
+    public void setAlerts(List<AlertDTO> alerts) {
+        this.alerts = alerts;
+    }
 
-
-
-    public static class AlertDTO {
+    /*
+    public static class AlertDTO2 {
         private String msg;
         private String type; // ERROR, WARNING, INFO
         private String time;
@@ -84,4 +93,6 @@ public class StoreDashboardDTO {
         }
 
     }
+    */
+
 }

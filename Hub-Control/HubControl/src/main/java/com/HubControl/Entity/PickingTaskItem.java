@@ -1,5 +1,6 @@
 package com.HubControl.Entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 @Entity
@@ -20,14 +21,17 @@ public class PickingTaskItem {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "task_id", nullable = false)
+    @JsonIgnore
     private PickingTask pickingTask;
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_item_id", nullable = false, unique = true)
+    @JsonIgnore
     private OrderItem orderItem;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id", nullable = false)
+    @JsonIgnore
     private Product product;
 
 //    @ManyToOne(fetch = FetchType.LAZY)

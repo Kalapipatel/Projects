@@ -1,8 +1,6 @@
 package com.HubControl.Controller;
 
 import com.HubControl.Entity.PickStatus;
-import com.HubControl.Entity.PickingTask;
-import com.HubControl.Entity.PickingTaskItem;
 import com.HubControl.Entity.PickingTaskStatus;
 import com.HubControl.Service.PickerService;
 import com.HubControl.dto.PickingTaskDTO;
@@ -44,12 +42,17 @@ public class PickerController {
         return ResponseEntity.ok(taskItems);
     }
 
-    @PostMapping("/{taskId}/{taskItemId}/{itemStatus}")
-    public String fun(@PathVariable int taskId, @PathVariable int taskItemId, @PathVariable PickStatus itemStatus){
+    @PutMapping("/{taskId}/{taskItemId}/{itemStatus}")
+    public String changeItemStatus(@PathVariable int taskId, @PathVariable int taskItemId, @PathVariable PickStatus itemStatus){
         pickerService.changeItemStatus(taskId, taskItemId, itemStatus);
         return  itemStatus.toString();
     }
 
+    @PutMapping("/{taskId}/{taskStatus}")
+    public String changeTaskStatus(@PathVariable int taskId, @PathVariable PickingTaskStatus taskStatus){
+        pickerService.changeTaskStatus(taskId, taskStatus);
+        return  taskStatus.toString();
+    }
 }
 
 

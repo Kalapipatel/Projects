@@ -1,5 +1,7 @@
 package com.HubControl.Entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -25,17 +27,21 @@ public class PickingTask {
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_id", nullable = false, unique = true)
+    @JsonIgnore
     private Order order;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "store_id", nullable = false)
+    @JsonIgnore
     private Store store;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "picker_id")
+    @JsonIgnore
     private User picker;
 
     @OneToMany(mappedBy = "pickingTask", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private List<PickingTaskItem> pickingTaskItems;
 
     // --- Constructors ---

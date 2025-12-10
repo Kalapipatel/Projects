@@ -4,7 +4,7 @@ import java.util.List;
 
 public class ManagerDashboardDTO {
     private String managerName;
-    private List<StoreSummaryDTO> stores;
+    private List<StoreUnderManagementDTO> stores;
     private StoreDashboardDTO stats;
 
 
@@ -14,10 +14,10 @@ public class ManagerDashboardDTO {
     public void setManagerName(String managerName) {
         this.managerName = managerName;
     }
-    public List<StoreSummaryDTO> getStores() {
+    public List<StoreUnderManagementDTO> getStores() {
         return stores;
     }
-    public void setStores(List<StoreSummaryDTO> stores) {
+    public void setStores(List<StoreUnderManagementDTO> stores) {
         this.stores = stores;
     }
     public StoreDashboardDTO getStats() {
@@ -29,7 +29,7 @@ public class ManagerDashboardDTO {
 
     public ManagerDashboardDTO(){}
 
-    public ManagerDashboardDTO(String managerName, List<StoreSummaryDTO> stores, StoreDashboardDTO stats) {
+    public ManagerDashboardDTO(String managerName, List<StoreUnderManagementDTO> stores, StoreDashboardDTO stats) {
         this.managerName = managerName;
         this.stores = stores;
         this.stats = stats;
