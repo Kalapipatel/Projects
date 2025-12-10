@@ -1,63 +1,3 @@
-// export const requestNewOrder = async (pickerId) => {
-//   console.log(`Fetching order for picker: ${pickerId}...`);
-
-//   // --- MOCK RESPONSE (Simulating Backend Delay) ---
-//   return new Promise((resolve, reject) => {
-//     setTimeout(() => {
-//       // Logic: You can simulate success/failure here
-//       const success = true; 
-      
-//       if (success) {
-//           resolve({
-//             taskId: 502,
-//             taskStatus: "PROCESSING",
-//             assignedAt: new Date().toISOString(),
-//             completedAt: null,
-            
-//             // Nested Order Object
-//             order: {
-//               orderId: 9901,
-//               orderNumber: "ORD-9901-XYZ",
-//             },
-
-//             // List of Items to Pick
-//             pickingTaskItems: [
-//               {
-//                 pickingTaskItemId: 101,
-//                 quantity: 2,
-//                 pickedQuantity: 0, 
-//                 status: "PENDING", 
-//                 product: {
-//                   productId: 55,
-//                   name: "Wireless Mouse",
-//                   sku: "WM-001",
-//                   location: "Rack A-12",
-//                   isFragile: false
-//                 }
-//               },
-//               {
-//                 pickingTaskItemId: 102,
-//                 quantity: 1,
-//                 pickedQuantity: 0,
-//                 status: "PENDING",
-//                 product: {
-//                   productId: 89,
-//                   name: "Curved Monitor 27",
-//                   sku: "MN-27-CV",
-//                   location: "Rack D-05",
-//                   isFragile: true
-//                 }
-//               }
-//             ]
-//           });
-//       } else {
-//           reject("No orders available at this time.");
-//       }
-//     }, 800); // 0.8 second delay
-//   });
-// };
-
-
 
 const API_BASE_URL = "http://localhost:8080/api/picker";
 
@@ -131,6 +71,54 @@ export const startPickingTask = async (pickerId, taskId) => {
     return data; // Returns List<TaskItemDTO>
   } catch (error) {
     console.error("Failed to fetch task items:", error);
+    throw error;
+  }
+};
+
+/**
+ * Update Individual Item Status
+ * URL: /api/picker/{taskId}/{itemId}/{status}
+ */
+export const updateItemStatus = async (taskId, itemId, status) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/${taskId}/${itemId}/${status}`, {
+      method: "PUT", // Assumed POST based on context; could be PUT depending on your controller
+      headers: { "Content-Type": "application/json" },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to update item ${itemId}`);
+    }
+    return true; // Success
+  } catch (error) {
+    console.error(`Error updating item ${itemId}:`, error);
+    throw error;
+  }
+};
+
+
+/**
+ * Update the overall Task Status (e.g., COMPLETED or ISSUE)
+ * Method: PUT
+ * URL: /api/picker/{taskId}/{taskStatus}
+ */
+export const updateTaskStatus = async (taskId, taskStatus) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/${taskId}/${taskStatus}`, {
+      method: "PUT", 
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to update task status to ${taskStatus}`);
+    }
+
+    // The controller returns a String, so we read text() instead of json()
+    return await response.text(); 
+  } catch (error) {
+    console.error("Error finalizing task:", error);
     throw error;
   }
 };

@@ -8,7 +8,7 @@ const RecentAlerts = () => {
     { msg: "Low Stock: Dairy Milk Silk", type: "error", time: "10m ago" },
     { msg: "Picker 'Rahul' is idle > 15m", type: "warning", time: "32m ago" },
     { msg: "System Maintenance Scheduled", type: "info", time: "2h ago" },
-    { msg: "2System Maintenance Scheduled", type: "info", time: "2h ago" },
+    { msg: "2System Maintenance Scheduled", type: "info", time: "2h ago" }
   ];
 
   return (

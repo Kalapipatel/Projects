@@ -4,7 +4,8 @@ import TaskCard from '../components/picker/TaskCard';
 import TaskDetailView from '../components/picker/TaskDetailView'; 
 import RequestConfirmationModal from '../components/picker/modals/RequestConfirmationModal';
 import FinalizeOrderModal from '../components/picker/modals/FinalizeOrderModal';
-import { requestNewOrder, updatePickerStatus, startPickingTask } from '../services/pickerService'; 
+// Added updateTaskStatus to imports
+import { requestNewOrder, updatePickerStatus, startPickingTask, updateItemStatus, updateTaskStatus } from '../services/pickerService'; 
 import { Download, History, Loader2, Truck, AlertCircle } from 'lucide-react';
 
 // --- CONSTANTS ---
@@ -133,49 +134,101 @@ const PickerLP = ({ onLogout }) => {
   };
 
   // 4. Picking Complete
-  const handlePickingComplete = (completedItems) => {
+  const handlePickingComplete = async (completedItems) => {
     if (!activeTask) return;
     
-    const processingTask = { 
-      ...activeTask, 
-      taskStatus: "PROCESSING", 
-      timePicked: new Date().toLocaleTimeString(),
-      items: completedItems 
-    };
+    setLoading(true); 
+    setError(null);
 
-    setInProcessTasks(prev => [processingTask, ...prev]);
-    setActiveTask(null);
-    setActiveTaskItems([]); 
-    setViewMode('in-process'); 
-    alert("Items Picked! Order moved to In-Process."); 
+    try {
+        // DEBUG: Log exactly what is being sent
+        console.log("Sending items to API:", completedItems.map(i => ({
+            taskId: activeTask.taskId,
+            itemId: i.taskItemId,
+            status: i.pickStatus
+        })));
+
+        // USE Promise.allSettled instead of Promise.all
+        const results = await Promise.allSettled(completedItems.map(item => 
+            updateItemStatus(activeTask.taskId, item.taskItemId, item.pickStatus)
+        ));
+
+        // Filter out the failures
+        const failedRequests = results.filter(r => r.status === 'rejected');
+        
+        if (failedRequests.length > 0) {
+            console.error("Some items failed to sync:", failedRequests);
+            // Optional: Extract the specific error message from the backend
+            const reason = failedRequests[0].reason?.message || "Unknown Server Error";
+            throw new Error(`Failed to sync ${failedRequests.length} item(s). Server said: ${reason}`);
+        }
+
+        // B. Success: Move to In-Process
+        const processingTask = { 
+            ...activeTask, 
+            taskStatus: "PROCESSING", 
+            timePicked: new Date().toLocaleTimeString(),
+            items: completedItems 
+        };
+
+        setInProcessTasks(prev => [processingTask, ...prev]);
+        setActiveTask(null);
+        setActiveTaskItems([]); 
+        setViewMode('in-process'); 
+
+    } catch (err) {
+        console.error("Bulk sync failed:", err);
+        // This specific error message will now be visible if you applied the previous UI fix
+        setError(err.message || "Failed to sync some items. Check console for details.");
+    } finally {
+        setLoading(false);
+    }
   };
 
-  // 5. Finalize Order
-  const handleFinalizeAction = (action) => {
+  // 5. Finalize Order (INTEGRATED API)
+  const handleFinalizeAction = async (action) => {
     if (!finalizeTask) return;
 
-    if (action === 'COMPLETED') {
-      const completedTask = { 
-          ...finalizeTask, 
-          taskStatus: "COMPLETED", 
-          timeCompleted: new Date().toLocaleTimeString() 
-      };
+    setLoading(true); // Show global loading or handle inside modal
+    setError(null);
 
-      setTaskHistory(prev => [completedTask, ...prev]);
-      setInProcessTasks(prev => prev.filter(t => t.orderId !== finalizeTask.orderId));
-      alert(`Order #${finalizeTask.orderId} marked as COMPLETED.`);
-    } 
-    else if (action === 'ISSUE') {
-      setInProcessTasks(prevTasks => prevTasks.map(task => {
-        if (task.orderId === finalizeTask.orderId) {
-            return { ...task, taskStatus: "ISSUE" }; 
+    try {
+        // A. Determine API Status String (COMPLETED or ISSUE)
+        const apiStatus = action === 'COMPLETED' ? 'COMPLETED' : 'ISSUE';
+
+        // B. Trigger API
+        // API: /api/picker/{taskId}/{taskStatus}
+        await updateTaskStatus(finalizeTask.taskId, apiStatus);
+
+        // C. Update Local State on Success
+        if (action === 'COMPLETED') {
+            const completedTask = { 
+                ...finalizeTask, 
+                taskStatus: "COMPLETED", 
+                timeCompleted: new Date().toLocaleTimeString() 
+            };
+            setTaskHistory(prev => [completedTask, ...prev]);
+            setInProcessTasks(prev => prev.filter(t => t.orderId !== finalizeTask.orderId));
+            alert(`Order #${finalizeTask.orderId} marked as COMPLETED.`);
+        } 
+        else if (action === 'ISSUE') {
+            setInProcessTasks(prevTasks => prevTasks.map(task => {
+                if (task.orderId === finalizeTask.orderId) {
+                    return { ...task, taskStatus: "ISSUE" }; 
+                }
+                return task;
+            }));
+            alert(`Issue reported for Order #${finalizeTask.orderId}.`);
         }
-        return task;
-      }));
-      alert(`Issue reported for Order #${finalizeTask.orderId}.`);
-    }
 
-    setFinalizeTask(null); 
+    } catch (err) {
+        console.error("Finalize task failed:", err);
+        alert(`Failed to update task status. Please try again.`);
+        // We do NOT remove the task from In-Process list if API fails
+    } finally {
+        setLoading(false);
+        setFinalizeTask(null); // Close modal
+    }
   };
 
   // --- RENDER DETAIL VIEW ---
@@ -186,7 +239,9 @@ const PickerLP = ({ onLogout }) => {
         taskMetadata={activeTask}      
         onBack={() => setViewMode('active')} 
         onCompleteTask={handlePickingComplete} 
+        isSubmitting={loading} 
         theme={theme}
+        serverError={error}
       />
     );
   }
@@ -228,7 +283,7 @@ const PickerLP = ({ onLogout }) => {
             onClick={() => { setViewMode('active'); }} 
             icon={<Download size={20} />} 
             label="Request" 
-            loading={loading && !activeTaskItems.length}
+            loading={loading && !activeTaskItems.length && viewMode === 'active'}
             isDark={isDark}
           />
           <NavButton 
@@ -274,7 +329,6 @@ const PickerLP = ({ onLogout }) => {
                </div>
 
               {activeTask ? (
-                // FIX: Removed wrapper onClick, passed onSelect directly to TaskCard
                 <div> 
                   {loading && activeTaskItems.length === 0 ? (
                       <div className={`h-40 rounded-xl flex items-center justify-center ${isDark ? 'bg-slate-900' : 'bg-white'}`}>
@@ -285,7 +339,7 @@ const PickerLP = ({ onLogout }) => {
                         <TaskCard 
                           task={activeTask} 
                           theme={theme}
-                          onSelect={handleStartPicking} // FIXED: Passed function here
+                          onSelect={handleStartPicking} 
                         />
                         <p className="text-center text-xs mt-3 text-emerald-500 font-medium animate-pulse">
                            Tap card to Start Picking Items &rarr;
@@ -319,7 +373,7 @@ const PickerLP = ({ onLogout }) => {
                     <div key={index} className="cursor-pointer hover:scale-[1.02] transition-transform">
                       <TaskCard 
                         task={task} 
-                        onSelect={() => setFinalizeTask(task)} // This was already correct
+                        onSelect={() => setFinalizeTask(task)} 
                         theme={theme} 
                       />
                     </div>
