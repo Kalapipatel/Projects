@@ -75,7 +75,8 @@ const App = () => {
 
   // --- Protected Role-Based Routes ---
   if (view === 'adminLp') {
-    return <AdminLP onLogout={() => setView('login')} />;
+    // UPDATED: Pass setView as 'onNavigate' to match the AdminLP component
+    return <AdminLP onNavigate={setView} />;
   }
 
   if (view === 'managerLp') {
