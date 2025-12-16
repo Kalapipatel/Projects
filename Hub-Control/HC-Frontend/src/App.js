@@ -10,24 +10,37 @@ import ManagePickers from './pages/ManagePickers';
 import Inventory from './pages/Inventory';
 import OrderQueue from './pages/OrderQueue';
 
+// --- NEW IMPORTS FOR ADMIN SUB-PAGES ---
+import StoreManagement from './pages/admin/StoreManagement';
+import UserManagement from './pages/admin/UserManagement';
+import InventoryManagement from './pages/admin/InventoryManagement'; 
+import Performance from './pages/admin/Performance';
+
 const App = () => {
   // Initialize view based on current URL path
   const getInitialView = () => {
     const path = window.location.pathname;
     
-    // Check for sub-pages first (regex checks for /manager/{number}/{action})
+    // Check for Manager sub-pages
     const managerMatch = path.match(/^\/manager\/(\d+)\/(.*)$/);
     if (managerMatch) {
-      setActiveStoreId(parseInt(managerMatch[1])); // Save the ID
+      setActiveStoreId(parseInt(managerMatch[1])); 
       if (managerMatch[2] === 'manage-pickers') return 'managePickers';
       if (managerMatch[2] === 'inventory') return 'inventory';
       if (managerMatch[2] === 'order-queue') return 'orderQueue';
     }
 
+    // --- ADMIN ROUTES ---
     if (path === '/admin') return 'adminLp';
+    if (path === '/admin/stores') return 'adminStores';
+    if (path === '/admin/users') return 'adminUsers';
+    if (path === '/admin/inventory') return 'adminInventory';
+    if (path === '/admin/performance') return 'adminPerformance';
+
     if (path === '/manager') return 'managerLp';
     if (path === '/picker') return 'pickerLp';
     if (path === '/login') return 'login';
+    
     return 'home';
   };
 
@@ -35,33 +48,48 @@ const App = () => {
   const [activeStoreId, setActiveStoreId] = useState(null);
 
   // --- 1. SYNC URL WITH STATE ---
-  // Whenever 'view' changes, we update the browser URL
   useEffect(() => {
     let path = '/';
-    if (view === 'adminLp') path = '/admin';
+
+    // Basic Routes
+    if (view === 'login') path = '/login';
     else if (view === 'managerLp') path = '/manager';
     else if (view === 'pickerLp') path = '/picker';
-    else if (view === 'login') path = '/login';
-
+    
+    // Manager Sub-routes
     else if (view === 'managePickers') path = `/manager/${activeStoreId}/manage-pickers`;
     else if (view === 'inventory') path = `/manager/${activeStoreId}/inventory`;
     else if (view === 'orderQueue') path = `/manager/${activeStoreId}/order-queue`;
-    
+
+    // --- ADMIN URL MAPPING ---
+    else if (view === 'adminLp') path = '/admin';
+    else if (view === 'adminStores') path = '/admin/stores';
+    else if (view === 'adminUsers') path = '/admin/users';
+    else if (view === 'adminInventory') path = '/admin/inventory';
+    else if (view === 'adminPerformance') path = '/admin/performance';
+
     else path = '/';
 
+    // Only push if path actually changed
     if (window.location.pathname !== path) {
       window.history.pushState({}, '', path);
     }
-  }, [view, activeStoreId]); // Add activeStoreId to dependencies
+  }, [view, activeStoreId]);
 
   // --- 2. HANDLE BROWSER BACK BUTTON ---
   useEffect(() => {
     const handlePopState = () => {
       const path = window.location.pathname;
-      if (path === '/admin') setView('adminLp');
+      
+      if (path === '/login') setView('login');
       else if (path === '/manager') setView('managerLp');
       else if (path === '/picker') setView('pickerLp');
-      else if (path === '/login') setView('login');
+
+      // Admin Back Navigation
+      else if (path === '/admin') setView('adminLp');
+      else if (path === '/admin/stores') setView('adminStores');
+      else if (path === '/admin/users') setView('adminUsers');
+      
       else setView('home');
     };
 
@@ -73,12 +101,26 @@ const App = () => {
     document.documentElement.style.scrollBehavior = 'smooth';
   }, []);
 
-  // --- Protected Role-Based Routes ---
+  // ==========================
+  // VIEW RENDERING LOGIC
+  // ==========================
+
+  // --- ADMIN PROTECTED ROUTES (Updated) ---
   if (view === 'adminLp') {
-    // UPDATED: Pass setView as 'onNavigate' to match the AdminLP component
     return <AdminLP onNavigate={setView} />;
   }
+  if (view === 'adminStores') {
+    return <StoreManagement onNavigate={setView} />;
+  }
+  if (view === 'adminUsers') {
+    return <UserManagement onNavigate={setView} />;
+  }
+  // You can add these once files are created:
+  if (view === 'adminInventory') return <InventoryManagement onNavigate={setView} />;
+  if (view === 'adminPerformance') return <Performance onNavigate={setView} />;
 
+
+  // --- MANAGER PROTECTED ROUTES ---
   if (view === 'managerLp') {
     return (
       <ManagerLP 
@@ -91,16 +133,6 @@ const App = () => {
       />
     );
   }
-
-  if (view === 'pickerLp') {
-    return <PickerLP onLogout={() => setView('login')} />;
-  }
-
-  // --- Public Routes ---
-  if (view === 'login') {
-    return <LoginPage onNavigate={setView} />;
-  }
-
   if (view === 'managePickers') {
     return <ManagePickers storeId={activeStoreId} onBack={() => setView('managerLp')} />;
   }
@@ -111,6 +143,19 @@ const App = () => {
     return <OrderQueue storeId={activeStoreId} onBack={() => setView('managerLp')} />;
   }
 
+
+  // --- PICKER PROTECTED ROUTES ---
+  if (view === 'pickerLp') {
+    return <PickerLP onLogout={() => setView('login')} />;
+  }
+
+
+  // --- PUBLIC ROUTES ---
+  if (view === 'login') {
+    return <LoginPage onNavigate={setView} />;
+  }
+
+  // DEFAULT (LANDING PAGE)
   return (
     <div className="min-h-screen bg-slate-50 font-sans text-slate-900 selection:bg-blue-100">
       <Navbar onNavigate={setView} currentPage={view} />
