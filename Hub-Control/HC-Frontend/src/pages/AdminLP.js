@@ -101,9 +101,9 @@ const AdminLP = ({ onNavigate }) => {
 
               <div className="space-y-5">
                 {[
-                  { label: 'Stores', count: 12, icon: <Store size={18} /> },
-                  { label: 'Managers', count: 24, icon: <Users size={18} /> },
-                  { label: 'Pickers', count: 145, icon: <Package size={18} /> },
+                  { label: 'Stores', active: 12, total: 12, icon: <Store size={18} /> },
+                  { label: 'Managers', active: 24, total: 25, icon: <Users size={18} /> },
+                  { label: 'Pickers', active: 145, total: 150, icon: <Package size={18} /> },
                 ].map((item, idx) => (
                   <div
                     key={idx}
@@ -121,7 +121,7 @@ const AdminLP = ({ onNavigate }) => {
                       </div>
                       <p className="font-medium">{item.label}</p>
                     </div>
-                    <span className="font-extrabold text-lg">{item.count}</span>
+                    <span className="font-extrabold text-lg">{item.active} / {item.total}</span>
                   </div>
                 ))}
               </div>
