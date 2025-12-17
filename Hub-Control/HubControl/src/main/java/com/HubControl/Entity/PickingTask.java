@@ -3,6 +3,8 @@ package com.HubControl.Entity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
+
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -24,6 +26,9 @@ public class PickingTask {
 
     @Column(name = "completed_at")
     private LocalDateTime completedAt;
+
+    @Column(name = "total_order_value", precision = 10, scale = 2)
+    private BigDecimal totalOrderValue = BigDecimal.ZERO;
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_id", nullable = false, unique = true)
@@ -47,11 +52,12 @@ public class PickingTask {
     // --- Constructors ---
     public PickingTask() {}
 
-    public PickingTask(int taskId, PickingTaskStatus taskStatus, LocalDateTime assignedAt, LocalDateTime completedAt, Order order, Store store, User picker, List<PickingTaskItem> pickingTaskItems) {
+    public PickingTask(int taskId, PickingTaskStatus taskStatus, LocalDateTime assignedAt, LocalDateTime completedAt, BigDecimal totalOrderValue, Order order, Store store, User picker, List<PickingTaskItem> pickingTaskItems) {
         this.taskId = taskId;
         this.taskStatus = taskStatus;
         this.assignedAt = assignedAt;
         this.completedAt = completedAt;
+        this.totalOrderValue = totalOrderValue;
         this.order = order;
         this.store = store;
         this.picker = picker;
@@ -89,6 +95,14 @@ public class PickingTask {
 
     public void setCompletedAt(LocalDateTime completedAt) {
         this.completedAt = completedAt;
+    }
+
+    public BigDecimal getTotalOrderValue() {
+        return totalOrderValue;
+    }
+
+    public void setTotalOrderValue(BigDecimal totalOrderValue) {
+        this.totalOrderValue = totalOrderValue;
     }
 
     public Order getOrder() {

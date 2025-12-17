@@ -3,6 +3,8 @@ package com.HubControl.Entity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
+import java.math.BigDecimal;
+
 @Entity
 @Table(name = "picking_task_items")
 public class PickingTaskItem {
@@ -14,6 +16,12 @@ public class PickingTaskItem {
 
     @Column(name = "quantity_picked", nullable = false)
     private int quantityPicked = 0;
+
+    @Column(name = "price_per_unit",  precision = 10, scale = 2)
+    private BigDecimal pricePerUnit;
+
+    @Column(name = "total_price",  precision = 10, scale = 2)
+    private BigDecimal totalPrice;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "pick_status", nullable = false, length = 20)
@@ -56,6 +64,22 @@ public class PickingTaskItem {
 
     public void setQuantityPicked(int quantityPicked) {
         this.quantityPicked = quantityPicked;
+    }
+
+    public BigDecimal getPricePerUnit() {
+        return pricePerUnit;
+    }
+
+    public void setPricePerUnit(BigDecimal pricePerUnit) {
+        this.pricePerUnit = pricePerUnit;
+    }
+
+    public BigDecimal getTotalPrice() {
+        return totalPrice;
+    }
+
+    public void setTotalPrice(BigDecimal totalPrice) {
+        this.totalPrice = totalPrice;
     }
 
     public PickStatus getPickStatus() {

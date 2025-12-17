@@ -9,6 +9,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+
 public interface PickingTaskRepository extends JpaRepository<PickingTask, Integer> {
 
     @Modifying
@@ -16,4 +18,8 @@ public interface PickingTaskRepository extends JpaRepository<PickingTask, Intege
     @Query("UPDATE PickingTask p SET p.taskStatus = :status WHERE p.taskId = :taskId")
     int updateTaskStatus(@Param("taskId") int taskId, @Param("status") PickingTaskStatus status);
 
+    @Modifying
+    @Transactional
+    @Query("UPDATE PickingTask pt SET pt.totalOrderValue = :totalOrderValue WHERE pt.taskId = :taskId")
+    int updateTotalOrderValue(@Param("taskId") int taskId, @Param("totalOrderValue") BigDecimal totalOrderValue);
 }

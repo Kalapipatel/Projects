@@ -3,7 +3,7 @@ package com.HubControl.Controller;
 import com.HubControl.Entity.Inventory;
 import com.HubControl.Entity.Order;
 import com.HubControl.Entity.User;
-import com.HubControl.Service.ManagerDashboardService;
+import com.HubControl.Service.ManagerService;
 import com.HubControl.dto.ManagerDashboardDTO;
 import com.HubControl.dto.StoreDashboardDTO;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,7 +18,7 @@ import java.util.List;
 public class ManagerController {
 
     @Autowired
-    private ManagerDashboardService dashboardService;
+    private ManagerService dashboardService;
 
     @GetMapping("/{managerId}/dashboard")
     public ManagerDashboardDTO getDashboard( @PathVariable int managerId) {

@@ -14,6 +14,18 @@ public interface UserRepository extends JpaRepository<User, Integer> {
 
     Optional<User> findByEmail(String email);
 
+    @Query("SELECT COUNT(u) FROM User u WHERE u.role.roleId = 2")
+    int countTotalManagers();
+
+    @Query("SELECT COUNT(u) FROM User u WHERE u.role.roleId = 2 AND u.isActive = true")
+    int countActiveManagers();
+
+    @Query("SELECT COUNT(u) FROM User u WHERE u.role.roleId = 3")
+    int countTotalPickers();
+
+    @Query("SELECT COUNT(u) FROM User u WHERE u.role.roleId = 3 AND u.isActive = true")
+    int countActivePickers();
+
     @Query("SELECT COUNT(u) FROM User u JOIN u.stores s WHERE s.storeId = :storeId AND u.role.roleId = 3")
     int countTotalPickersByStore(@Param("storeId") int storeId);
 

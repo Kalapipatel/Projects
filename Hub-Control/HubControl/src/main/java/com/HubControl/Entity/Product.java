@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
+
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Set;
 
@@ -25,6 +27,9 @@ public class Product {
 
     @Column(columnDefinition = "TEXT")
     private String description;
+
+    @Column(name = "price", nullable = false,  precision = 10, scale = 2)
+    private BigDecimal price;
 
     @Column(name = "image_url", length = 255)
     private String imageUrl;
@@ -54,6 +59,21 @@ public class Product {
 
     // --- Constructors ---
     public Product() {}
+
+    public Product(int productId, String sku, String productName, String description, BigDecimal price, String imageUrl, LocalDateTime createdAt, LocalDateTime updatedAt, Supplier supplier, Set<Inventory> inventory, Set<InventoryBatch> batches, Set<OrderItem> orderItems) {
+        this.productId = productId;
+        this.sku = sku;
+        this.productName = productName;
+        this.description = description;
+        this.price = price;
+        this.imageUrl = imageUrl;
+        this.createdAt = createdAt;
+        this.updatedAt = updatedAt;
+        this.supplier = supplier;
+        this.inventory = inventory;
+        this.batches = batches;
+        this.orderItems = orderItems;
+    }
 
     // --- Getters and Setters ---
     public int getProductId() {
@@ -86,6 +106,14 @@ public class Product {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public BigDecimal getPrice() {
+        return price;
+    }
+
+    public void setPrice(BigDecimal price) {
+        this.price = price;
     }
 
     public String getImageUrl() {

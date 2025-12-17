@@ -7,6 +7,7 @@ import com.HubControl.dto.TaskItemDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -27,8 +28,9 @@ public class PickerServiceImpl implements PickerService {
     @Autowired
     private PickingTaskItemRepository pickingTaskItemRepo;
 
+
     @Autowired
-    private InventoryRepository inventoryRepo;
+    private InventoryService inventoryService;
 
     @Override
     public void setActiveStatus(int pickerId, int isActive) {
@@ -45,10 +47,12 @@ public class PickerServiceImpl implements PickerService {
         PickingTaskDTO taskDTO = new PickingTaskDTO();
         PickingTask task = new PickingTask();
 
+        // get first pending order and add into picking task
         Order firstPendingOrder = orderRepo.findFirstByStore_StoreIdAndOrderStatusOrderByCreatedAtAsc(storeId, OrderStatus.PENDING);
         task.setOrder(firstPendingOrder);
         task.setStore(firstPendingOrder.getStore());
 
+        // get picker and add into task
         Optional<User> pickerOptional = userRepo.findById(pickerId);
         if (pickerOptional.isEmpty()) {
             throw new RuntimeException("Manager not found with ID: " + pickerId);
@@ -56,12 +60,14 @@ public class PickerServiceImpl implements PickerService {
         User picker = pickerOptional.get();
         task.setPicker(picker);
 
+        // saving picking task
         PickingTask savedTask =pickingTaskRepo.save(task);
         int generatedTaskId = savedTask.getTaskId();
 
         // after saving the task, order status will update from PENDING to PROCESSING
         orderStatusPendingToPrecessing(firstPendingOrder.getOrderId());
 
+        // get order items and add into picking task items
         List<OrderItem> orderItems = firstPendingOrder.getOrderItems();
         List<PickingTaskItem> taskItems = new ArrayList<>();
 
@@ -72,6 +78,11 @@ public class PickerServiceImpl implements PickerService {
             pickingItem.setOrderItem(item);
             pickingItem.setProduct(item.getProduct());
             pickingItem.setQuantityPicked(item.getQuantityRequested());
+            pickingItem.setPricePerUnit(item.getPricePerUnit());
+
+            // calculate total price and set into task item
+            BigDecimal totalPrice = item.getPricePerUnit().multiply(BigDecimal.valueOf(item.getQuantityRequested()));
+            pickingItem.setTotalPrice(totalPrice);
 
             PickingTaskItem savedTaskItem = pickingTaskItemRepo.save(pickingItem);
             taskItems.add(savedTaskItem);
@@ -143,14 +154,21 @@ public class PickerServiceImpl implements PickerService {
             PickingTask task = optionalTask.get();
 
             List<PickingTaskItem> taskItems = task.getPickingTaskItems();
+            BigDecimal total = BigDecimal.ZERO;
 
             for(PickingTaskItem item : taskItems){
                 int productId = item.getProduct().getProductId();
                 int quantityPicked = item.getQuantityPicked();
 
-                int rows = inventoryRepo.subtractQuantityFromInventory(productId, quantityPicked);
+                inventoryService.subtractQuantityFromInventory(productId, quantityPicked);
+
+                if(item.getPickStatus() == PickStatus.PICKED){
+                    total = total.add(item.getTotalPrice());
+                }
 
             }
+
+            pickingTaskRepo.updateTotalOrderValue(taskId, total);
         }
     }
 }

@@ -18,5 +18,6 @@ public interface StoreRepository extends JpaRepository<Store, Integer> {
             "FROM Store s JOIN s.users u WHERE u.userId = :userId")
     List<StoreUnderManagementDTO> findStoreSummariesByUserId(@Param("userId") int userId);
 
-
+    @Query("SELECT COUNT(s) FROM Store s")
+    int countTotalStores();
 }

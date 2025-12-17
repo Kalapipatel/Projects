@@ -15,11 +15,13 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
     // Fetches count of orders grouped by status for a specific store
     // Returns a list of arrays: [Status (Enum/String), Count (Long)]
     @Query("SELECT o.orderStatus, COUNT(o) FROM Order o WHERE o.store.storeId = :storeId GROUP BY o.orderStatus")
-    List<Object[]> countOrdersByStatus(@Param("storeId") int storeId);
+    List<Object[]> countOrdersByStatusOfStore(@Param("storeId") int storeId);
+
+    @Query("SELECT o.orderStatus, COUNT(o) FROM Order o GROUP BY o.orderStatus")
+    List<Object[]> countOrdersByStatus();
 
     @Query(value = "SELECT * FROM orders WHERE store_id = :storeId ORDER BY created_at DESC", nativeQuery = true)
     List<Order> findOrderQueueByStoreId(@Param("storeId") int storeId);
-
 
     Order findFirstByStore_StoreIdAndOrderStatusOrderByCreatedAtAsc(int storeId, OrderStatus orderStatus);
 
