@@ -104,7 +104,9 @@ const AdminLP = ({ onNavigate }) => {
           ${isDark ? 'bg-slate-950 text-slate-200' : 'bg-slate-50 text-slate-900'}
         `}
       >
-        <div className="max-w-7xl mx-auto w-full p-4 md:p-6 flex flex-col gap-6">
+        <div className={`max-w-7xl mx-auto w-full p-4 md:p-6 flex flex-col gap-6
+          ${isDark ? 'bg-slate-950 text-slate-200' : 'bg-slate-50 text-slate-900'}
+          `}>
 
           {/* STATS */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -181,7 +183,7 @@ const AdminLP = ({ onNavigate }) => {
 
               <div className="space-y-5">
                 {[
-                  { label: 'Stores', active: dashboardData?.stores, total: dashboardData?.stores, icon: <Store size={18} /> },
+                  { label: 'Stores', active: dashboardData?.activeStores, total: dashboardData?.totalStores, icon: <Store size={18} /> },
                   { label: 'Managers', active: dashboardData?.activeManagers, total: dashboardData?.totalManagers, icon: <Users size={18} /> },
                   { label: 'Pickers', active: dashboardData?.activePickers, total: dashboardData?.totalPickers, icon: <Package size={18} /> },
                 ].map((item, idx) => (

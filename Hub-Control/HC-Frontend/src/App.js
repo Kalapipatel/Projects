@@ -13,6 +13,7 @@ import OrderQueue from './pages/OrderQueue';
 // --- NEW IMPORTS FOR ADMIN SUB-PAGES ---
 import StoreManagement from './pages/admin/StoreManagement';
 import UserManagement from './pages/admin/UserManagement';
+import AssignStore from './pages/admin/AssignStore';
 import InventoryManagement from './pages/admin/InventoryManagement'; 
 import Performance from './pages/admin/Performance';
 
@@ -65,6 +66,7 @@ const App = () => {
     else if (view === 'adminLp') path = '/admin';
     else if (view === 'adminStores') path = '/admin/stores';
     else if (view === 'adminUsers') path = '/admin/users';
+    else if (view === 'assignStores') path = '/admin/mapping';
     else if (view === 'adminInventory') path = '/admin/inventory';
     else if (view === 'adminPerformance') path = '/admin/performance';
 
@@ -89,6 +91,7 @@ const App = () => {
       else if (path === '/admin') setView('adminLp');
       else if (path === '/admin/stores') setView('adminStores');
       else if (path === '/admin/users') setView('adminUsers');
+      else if (path === '/admin/mapping') setView('assignStores');
       
       else setView('home');
     };
@@ -114,6 +117,9 @@ const App = () => {
   }
   if (view === 'adminUsers') {
     return <UserManagement onNavigate={setView} />;
+  }
+  if (view === 'assignStores') {
+    return <AssignStore onNavigate={setView} />;
   }
   // You can add these once files are created:
   if (view === 'adminInventory') return <InventoryManagement onNavigate={setView} />;

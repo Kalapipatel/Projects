@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutDashboard, Store, Users, Package, BarChart2, LogOut } from 'lucide-react';
+import { LayoutDashboard, Store, Users, Package, BarChart2, LogOut, Map } from 'lucide-react'; // Added Map icon
 
 const AdminSidebar = ({ isOpen, darkMode, currentView, onNavigate }) => {
   
@@ -7,6 +7,7 @@ const AdminSidebar = ({ isOpen, darkMode, currentView, onNavigate }) => {
     { name: 'Dashboard', icon: <LayoutDashboard size={20} />, view: 'adminLp' },
     { name: 'Store Management', icon: <Store size={20} />, view: 'adminStores' },
     { name: 'User Management', icon: <Users size={20} />, view: 'adminUsers' },
+    { name: 'Assign Stores', icon: <Map size={20} />, view: 'assignStores' }, // NEW ITEM
     { name: 'Inventory', icon: <Package size={20} />, view: 'adminInventory' },
     { name: 'Performance', icon: <BarChart2 size={20} />, view: 'adminPerformance' },
   ];
