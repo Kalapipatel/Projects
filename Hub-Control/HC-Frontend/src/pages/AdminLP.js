@@ -1,18 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import AdminLayout from '../components/admin/AdminLayout';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { ShoppingBag, Users, DollarSign, Package, Store } from 'lucide-react';
 
-const salesData = [
-  { day: 'Mon', sales: 4000 },
-  { day: 'Tue', sales: 3000 },
-  { day: 'Wed', sales: 5000 },
-  { day: 'Thu', sales: 2780 },
-  { day: 'Fri', sales: 1890 },
-  { day: 'Sat', sales: 6390 },
-  { day: 'Sun', sales: 3490 },
-];
-
+// Reusable Stat Card Component
 const StatCard = ({ title, value, icon, isDark }) => (
   <div
     className={`p-5 rounded-2xl border transition-all hover:scale-[1.02]
@@ -37,6 +28,75 @@ const AdminLP = ({ onNavigate }) => {
   );
   const isDark = theme === 'dark';
 
+  // State for Dashboard Data
+  const [dashboardData, setDashboardData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  // Helper: Format number to currency
+  const formatCurrency = (val) => `$${val?.toLocaleString()}`;
+
+  // Helper: Generate Last 7 Days Labels (excluding today)
+  // Backend sends [day-7, day-6, ..., day-1]
+  const processChartData = (weeklyData) => {
+    if (!weeklyData || weeklyData.length === 0) return [];
+    
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const today = new Date();
+    const processedData = [];
+
+    weeklyData.forEach((salesValue, index) => {
+      // Logic: Index 0 is 7 days ago. Index 6 is Yesterday.
+      // Offset = 7 - index. 
+      // If index is 6 (last item), offset is 1 (Yesterday).
+      const d = new Date();
+      d.setDate(today.getDate() - (7 - index));
+      
+      processedData.push({
+        day: days[d.getDay()],
+        sales: salesValue
+      });
+    });
+
+    return processedData;
+  };
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        const userId = localStorage.getItem('userId');
+        // If no userId is found, handle appropriately (e.g., redirect to login)
+        if (!userId) {
+            console.error("No User ID found");
+            return;
+        }
+
+        const response = await fetch(`http://localhost:8080/api/admin/${userId}/dashboard`);
+        if (response.ok) {
+          const data = await response.json();
+          setDashboardData(data);
+        } else {
+          console.error("Failed to fetch dashboard data");
+        }
+      } catch (error) {
+        console.error("Error connecting to backend:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
+
+  if (loading) {
+    return (
+        <AdminLayout currentView="adminLp" onNavigate={onNavigate}>
+            <div className="flex items-center justify-center h-full">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            </div>
+        </AdminLayout>
+    );
+  }
+
   return (
     <AdminLayout currentView="adminLp" onNavigate={onNavigate}>
       <div
@@ -48,10 +108,30 @@ const AdminLP = ({ onNavigate }) => {
 
           {/* STATS */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <StatCard title="Total Revenue" value="$128,430" icon={<DollarSign size={22} />} isDark={isDark} />
-            <StatCard title="Pending Orders" value="45" icon={<ShoppingBag size={22} />} isDark={isDark} />
-            <StatCard title="Processing" value="12" icon={<Package size={22} />} isDark={isDark} />
-            <StatCard title="Completed" value="892" icon={<ShoppingBag size={22} />} isDark={isDark} />
+            <StatCard 
+                title="Total Revenue" 
+                value={formatCurrency(dashboardData?.totalRevenue)} 
+                icon={<DollarSign size={22} />} 
+                isDark={isDark} 
+            />
+            <StatCard 
+                title="Pending Orders" 
+                value={dashboardData?.pendingOrders} 
+                icon={<ShoppingBag size={22} />} 
+                isDark={isDark} 
+            />
+            <StatCard 
+                title="Processing" 
+                value={dashboardData?.processingOrders} 
+                icon={<Package size={22} />} 
+                isDark={isDark} 
+            />
+            <StatCard 
+                title="Completed" 
+                value={dashboardData?.completedOrders} 
+                icon={<ShoppingBag size={22} />} 
+                isDark={isDark} 
+            />
           </div>
 
           {/* MAIN GRID */}
@@ -68,7 +148,7 @@ const AdminLP = ({ onNavigate }) => {
               </h3>
               <div className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={salesData}>
+                  <BarChart data={processChartData(dashboardData?.weeklyData)}>
                     <CartesianGrid
                       strokeDasharray="3 3"
                       stroke={isDark ? '#334155' : '#e5e7eb'}
@@ -101,9 +181,9 @@ const AdminLP = ({ onNavigate }) => {
 
               <div className="space-y-5">
                 {[
-                  { label: 'Stores', active: 12, total: 12, icon: <Store size={18} /> },
-                  { label: 'Managers', active: 24, total: 25, icon: <Users size={18} /> },
-                  { label: 'Pickers', active: 145, total: 150, icon: <Package size={18} /> },
+                  { label: 'Stores', active: dashboardData?.stores, total: dashboardData?.stores, icon: <Store size={18} /> },
+                  { label: 'Managers', active: dashboardData?.activeManagers, total: dashboardData?.totalManagers, icon: <Users size={18} /> },
+                  { label: 'Pickers', active: dashboardData?.activePickers, total: dashboardData?.totalPickers, icon: <Package size={18} /> },
                 ].map((item, idx) => (
                   <div
                     key={idx}

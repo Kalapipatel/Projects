@@ -6,6 +6,9 @@ const AdminLayout = ({ children, currentView, onNavigate }) => {
   // Theme State
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('theme') === 'dark');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  
+  // Get Admin Name from Local Storage (Assuming it was stored during login)
+  const adminName = localStorage.getItem('userName') || "Admin";
 
   // Apply Theme
   useEffect(() => {
@@ -51,8 +54,14 @@ const AdminLayout = ({ children, currentView, onNavigate }) => {
               <Bell size={20} />
               <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
             </div>
-            <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold">
-              A
+            {/* Dynamic Admin Name Display */}
+            <div className="flex items-center gap-3">
+                <span className={`text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                    {adminName}
+                </span>
+                <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold">
+                    {adminName.charAt(0).toUpperCase()}
+                </div>
             </div>
           </div>
         </header>
