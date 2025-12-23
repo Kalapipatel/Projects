@@ -30,9 +30,6 @@ public class ManagerServiceImpl implements ManagerService {
     private UserRepository userRepo;
 
     @Autowired
-    private OrderRepository orderRepo;
-
-    @Autowired
     private OrderService orderService;
 
     @Autowired
@@ -94,31 +91,6 @@ public class ManagerServiceImpl implements ManagerService {
         storeDashboardDTO.setCompletedOrders(orderStats.get("COMPLETED"));
         storeDashboardDTO.setTotalOrders(orderStats.get("TOTALORDERS"));
 
-//        List<Object[]> stats = orderRepo.countOrdersByStatusOfStore(storeId);
-//
-//        int totalOrders = 0;
-//
-//        // Iterate through the result set and populate DTO
-//        for (Object[] row : stats) {
-//            String status = row[0].toString();
-//            int count = ((Number) row[1]).intValue();
-//
-//            totalOrders += count;
-//
-//            switch (status) {
-//                case "PENDING":
-//                    storeDashboardDTO.setPendingOrders(count);
-//                    break;
-//                case "PROCESSING":
-//                    storeDashboardDTO.setInProgressOrders(count);
-//                    break;
-//                case "COMPLETED":
-//                    storeDashboardDTO.setCompletedOrders(count);
-//                    break;
-//            }
-//        }
-//
-//        storeDashboardDTO.setTotalOrders(totalOrders);
 
         // 5. Fill picker stats
         storeDashboardDTO.setActivePickers(getActivePickers(storeId));

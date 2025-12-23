@@ -17,10 +17,16 @@ public class AdminController {
     @Autowired
     private AdminService adminService;
 
-    @GetMapping("/dashboard")
+    @GetMapping("/{adminId}/dashboard")
     public ResponseEntity<AdminDashboardDTO> getDashboardData(){
         AdminDashboardDTO dashboardDTO = adminService.getDashboardData();
 
         return ResponseEntity.ok(dashboardDTO);
     }
 }
+
+/*
+ * john.doe@example.com / john_pass123
+ * bob.brown@example.com / bob_pass123
+ * lucy.king@example.com / lucy_pass123
+ */

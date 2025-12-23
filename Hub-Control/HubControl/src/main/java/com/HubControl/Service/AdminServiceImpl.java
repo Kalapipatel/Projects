@@ -6,6 +6,8 @@ import com.HubControl.dto.AdminDashboardDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -39,7 +41,7 @@ public class AdminServiceImpl implements AdminService {
     public AdminDashboardDTO getDashboardData(){
         AdminDashboardDTO dto = new AdminDashboardDTO();
 
-        dto.setTotalRevenue(5400);
+        dto.setTotalRevenue(558431);
 
         Map<String, Integer> orderStats = orderService.getCountOrdersByStatus();
 
@@ -52,6 +54,17 @@ public class AdminServiceImpl implements AdminService {
         dto.setTotalManagers(countTotalManagers());
         dto.setActivePickers(countActivePickers());
         dto.setTotalPickers(countTotalPickers());
+
+        List<Integer> weeklyReport = new ArrayList<>();
+        weeklyReport.add(3000);
+        weeklyReport.add(4000);
+        weeklyReport.add(5160);
+        weeklyReport.add(2700);
+        weeklyReport.add(6000);
+        weeklyReport.add(1500);
+        weeklyReport.add(4750);
+
+        dto.setWeeklyData(weeklyReport);
 
         return dto;
     }
