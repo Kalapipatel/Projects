@@ -25,6 +25,9 @@ public class Store {
     @Column(name = "pincode")
     private int pincode;
 
+    @Column(name = "status")
+    private boolean status = true;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
@@ -51,11 +54,12 @@ public class Store {
     // --- Constructors ---
     public Store() {}
 
-    public Store(int storeId, String storeName, String address, int pincode, LocalDateTime createdAt, Set<User> users, Set<Inventory> inventory, Set<InventoryBatch> batches, Set<Order> orders, Set<PickingTask> pickingTasks) {
+    public Store(int storeId, String storeName, String address, int pincode, boolean status, LocalDateTime createdAt, Set<User> users, Set<Inventory> inventory, Set<InventoryBatch> batches, Set<Order> orders, Set<PickingTask> pickingTasks) {
         this.storeId = storeId;
         this.storeName = storeName;
         this.address = address;
         this.pincode = pincode;
+        this.status = status;
         this.createdAt = createdAt;
         this.users = users;
         this.inventory = inventory;
@@ -95,6 +99,14 @@ public class Store {
 
     public void setPincode(int pincode) {
         this.pincode = pincode;
+    }
+
+    public boolean isStatus() {
+        return status;
+    }
+
+    public void setStatus(boolean status) {
+        this.status = status;
     }
 
     public LocalDateTime getCreatedAt() {

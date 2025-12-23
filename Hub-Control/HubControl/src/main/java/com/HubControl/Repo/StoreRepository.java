@@ -20,4 +20,7 @@ public interface StoreRepository extends JpaRepository<Store, Integer> {
 
     @Query("SELECT COUNT(s) FROM Store s")
     int countTotalStores();
+
+    @Query("SELECT COUNT(s) FROM Store s WHERE s.status = true")
+    int countActiveStores();
 }

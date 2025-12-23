@@ -1,14 +1,19 @@
 package com.HubControl.Service;
 
+import com.HubControl.Entity.Role;
+import com.HubControl.Entity.Store;
+import com.HubControl.Entity.User;
+import com.HubControl.Repo.RoleRepository;
 import com.HubControl.Repo.StoreRepository;
 import com.HubControl.Repo.UserRepository;
 import com.HubControl.dto.AdminDashboardDTO;
+import com.HubControl.dto.AssignStoreRequest;
+import com.HubControl.dto.StoreRequest;
+import com.HubControl.dto.UserRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Service
 public class AdminServiceImpl implements AdminService {
@@ -21,6 +26,9 @@ public class AdminServiceImpl implements AdminService {
 
     @Autowired
     private OrderService orderService;
+
+    @Autowired
+    private RoleRepository roleRepository;
 
     @Override
     public int countTotalPickers(){ return userRepo.countTotalPickers(); }
@@ -35,7 +43,10 @@ public class AdminServiceImpl implements AdminService {
     public int countActiveManagers(){ return userRepo.countActiveManagers(); }
 
     @Override
-    public int countStores(){ return storeRepo.countTotalStores(); }
+    public int countActiveStores(){return storeRepo.countActiveStores(); }
+
+    @Override
+    public int countTotalStores(){ return storeRepo.countTotalStores(); }
 
     @Override
     public AdminDashboardDTO getDashboardData(){
@@ -49,7 +60,8 @@ public class AdminServiceImpl implements AdminService {
         dto.setProcessingOrders(orderStats.get("PROCESSING"));
         dto.setCompletedOrders(orderStats.get("COMPLETED"));
 
-        dto.setStores(countStores());
+        dto.setActiveStores(countActiveStores());
+        dto.setTotalStores(countTotalStores());
         dto.setActiveManagers(countActiveManagers());
         dto.setTotalManagers(countTotalManagers());
         dto.setActivePickers(countActivePickers());
@@ -67,5 +79,123 @@ public class AdminServiceImpl implements AdminService {
         dto.setWeeklyData(weeklyReport);
 
         return dto;
+    }
+
+    // Store Management  --------------------------
+    @Override
+    public Store addStore(StoreRequest request) {
+        Store store = new Store();
+        store.setStoreName(request.getStoreName());
+        store.setAddress(request.getAddress());
+        store.setPincode(request.getPincode());
+        store.setStatus(request.isStatus());
+
+        return storeRepo.save(store);
+    }
+
+    @Override
+    public List<Store> getAllStores() {
+        return storeRepo.findAll();
+    }
+
+    @Override
+    public Store updateStore(int storeId, StoreRequest request) {
+        Optional<Store> optionalStore = storeRepo.findById(storeId);
+
+        if (optionalStore.isPresent()) {
+            Store store = optionalStore.get();
+            store.setStoreName(request.getStoreName());
+            store.setAddress(request.getAddress());
+            store.setPincode(request.getPincode());
+            store.setStatus(request.isStatus());
+
+            return storeRepo.save(store);
+        } else {
+            throw new RuntimeException("Store not found with ID: " + storeId);
+        }
+    }
+
+    @Override
+    public void deleteStore(int storeId) {
+        // Note: In a real production system with foreign keys,
+        // you might need to handle related data (orders/inventory) before deleting.
+        // For now, we perform a standard delete.
+        if(storeRepo.existsById(storeId)) {
+            storeRepo.deleteById(storeId);
+        } else {
+            throw new RuntimeException("Store not found with ID: " + storeId);
+        }
+    }
+
+    // User Management  --------------------------
+    @Override
+    public User addUser(UserRequest request) {
+        User user = new User();
+        mapRequestToUser(request, user);
+        return userRepo.save(user);
+    }
+
+    @Override
+    public List<User> getAllUsers() {
+        return userRepo.findAll();
+    }
+
+    @Override
+    public User updateUser(int userId, UserRequest request) {
+        User user = userRepo.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
+
+        mapRequestToUser(request, user);
+        return userRepo.save(user);
+    }
+
+    @Override
+    public void deleteUser(int userId) {
+        if(userRepo.existsById(userId)) {
+            userRepo.deleteById(userId);
+        } else {
+            throw new RuntimeException("User not found with ID: " + userId);
+        }
+    }
+
+    // Helper method to avoid duplication
+    private void mapRequestToUser(UserRequest request, User user) {
+        user.setUsername(request.getUsername());
+        user.setEmail(request.getEmail());
+        user.setFirstName(request.getFirstName());
+        user.setLastName(request.getLastName());
+        user.setAge(request.getAge());
+        user.setActive(request.isActive());
+
+        // Only update password if provided (simple check)
+        // In a real production scenario, use BCryptPasswordEncoder here
+        if (request.getPassword() != null && !request.getPassword().isEmpty()) {
+            user.setHashedPassword(request.getPassword());
+        }
+
+        // Fetch and set Role
+        Role role = roleRepository.findById(request.getRoleId())
+                .orElseThrow(() -> new RuntimeException("Role not found with ID: " + request.getRoleId()));
+        user.setRole(role);
+    }
+
+
+    // Mapping btw User and Store --------------
+    @Override
+    public void assignStoresToUser(AssignStoreRequest request) {
+        // 1. Fetch the User
+        User user = userRepo.findById(request.getUserId())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // 2. Fetch all Stores by IDs
+        List<Store> storesList = storeRepo.findAllById(request.getStoreIds());
+        Set<Store> storesSet = new HashSet<>(storesList);
+
+        // 3. Update the relationship
+        // This replaces the old mapping with the new one completely
+        user.setStores(storesSet);
+
+        // 4. Save User (cascades the update to the join table)
+        userRepo.save(user);
     }
 }

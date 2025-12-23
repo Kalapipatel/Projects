@@ -8,7 +8,8 @@ public class AdminDashboardDTO {
     private int processingOrders;
     private int completedOrders;
 
-    private int stores;
+    private int totalStores;
+    private int activeStores;
     private int totalManagers;
     private int activeManagers;
     private int totalPickers;
@@ -18,12 +19,13 @@ public class AdminDashboardDTO {
 
     public AdminDashboardDTO(){}
 
-    public AdminDashboardDTO(int totalRevenue, int pendingOrders, int processingOrders, int completedOrders, int stores, int totalManagers, int activeManagers, int totalPickers, int activePickers, List<Integer> weeklyData) {
+    public AdminDashboardDTO(int totalRevenue, int pendingOrders, int processingOrders, int completedOrders, int totalStores, int activeStores, int stores, int totalManagers, int activeManagers, int totalPickers, int activePickers, List<Integer> weeklyData) {
         this.totalRevenue = totalRevenue;
         this.pendingOrders = pendingOrders;
         this.processingOrders = processingOrders;
         this.completedOrders = completedOrders;
-        this.stores = stores;
+        this.totalStores = totalStores;
+        this.activeStores = activeStores;
         this.totalManagers = totalManagers;
         this.activeManagers = activeManagers;
         this.totalPickers = totalPickers;
@@ -63,12 +65,20 @@ public class AdminDashboardDTO {
         this.completedOrders = completedOrders;
     }
 
-    public int getStores() {
-        return stores;
+    public int getTotalStores() {
+        return totalStores;
     }
 
-    public void setStores(int stores) {
-        this.stores = stores;
+    public void setTotalStores(int totalStores) {
+        this.totalStores = totalStores;
+    }
+
+    public int getActiveStores() {
+        return activeStores;
+    }
+
+    public void setActiveStores(int activeStores) {
+        this.activeStores = activeStores;
     }
 
     public int getTotalManagers() {
