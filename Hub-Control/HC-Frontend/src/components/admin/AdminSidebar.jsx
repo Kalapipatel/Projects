@@ -7,8 +7,8 @@ const AdminSidebar = ({ isOpen, darkMode, currentView, onNavigate }) => {
     { name: 'Dashboard', icon: <LayoutDashboard size={20} />, view: 'adminLp' },
     { name: 'Store Management', icon: <Store size={20} />, view: 'adminStores' },
     { name: 'User Management', icon: <Users size={20} />, view: 'adminUsers' },
-    { name: 'Assign Stores', icon: <Map size={20} />, view: 'assignStores' }, // NEW ITEM
-    { name: 'Inventory', icon: <Package size={20} />, view: 'adminInventory' },
+    { name: 'Assign Stores', icon: <Map size={20} />, view: 'assignStores' },
+    { name: 'Product Master', icon: <Package size={20} />, view: 'adminProducts' },
     { name: 'Performance', icon: <BarChart2 size={20} />, view: 'adminPerformance' },
   ];
 
