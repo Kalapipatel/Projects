@@ -1,13 +1,12 @@
 package com.HubControl.Controller;
 
+import com.HubControl.Entity.Product;
 import com.HubControl.Entity.Store;
 import com.HubControl.Entity.User;
 import com.HubControl.Service.AdminService;
-import com.HubControl.dto.AdminDashboardDTO;
-import com.HubControl.dto.AssignStoreRequest;
-import com.HubControl.dto.StoreRequest;
-import com.HubControl.dto.UserRequest;
+import com.HubControl.dto.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -80,6 +79,43 @@ public class AdminController {
     public ResponseEntity<String> assignStore(@RequestBody AssignStoreRequest request) {
         adminService.assignStoresToUser(request);
         return ResponseEntity.ok("Stores assigned successfully");
+    }
+
+    // --- Product Management Endpoints ---
+
+    @PostMapping("/addProduct")
+    public ResponseEntity<Product> addProduct(@RequestBody ProductRequest request) {
+        return ResponseEntity.ok(adminService.addProduct(request));
+    }
+
+    @GetMapping("/getAllProducts")
+    public ResponseEntity<List<Product>> getAllProducts() {
+        return ResponseEntity.ok(adminService.getAllProducts());
+    }
+
+    @GetMapping("/searchProducts")
+    public ResponseEntity<List<Product>> searchProducts(@RequestParam String keyword) {
+        return ResponseEntity.ok(adminService.searchProducts(keyword));
+    }
+
+    @PutMapping("/updateProduct/{productId}")
+    public ResponseEntity<Product> updateProduct(@PathVariable int productId, @RequestBody ProductRequest request) {
+        return ResponseEntity.ok(adminService.updateProduct(productId, request));
+    }
+
+    @DeleteMapping("/deleteProduct/{productId}")
+    public ResponseEntity<String> deleteProduct(@PathVariable int productId) {
+        try {
+            adminService.deleteProduct(productId);
+            return ResponseEntity.ok("Product deleted successfully");
+        } catch (DataIntegrityViolationException e) {
+            // This catches the foreign key constraint error
+            return ResponseEntity.status(409).body("Cannot delete product: It is already associated with existing Orders or Inventory.");
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(404).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("An unexpected error occurred.");
+        }
     }
 }
 

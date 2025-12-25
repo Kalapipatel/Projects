@@ -1,11 +1,9 @@
 package com.HubControl.Service;
 
+import com.HubControl.Entity.Product;
 import com.HubControl.Entity.Store;
 import com.HubControl.Entity.User;
-import com.HubControl.dto.AdminDashboardDTO;
-import com.HubControl.dto.AssignStoreRequest;
-import com.HubControl.dto.StoreRequest;
-import com.HubControl.dto.UserRequest;
+import com.HubControl.dto.*;
 
 import java.util.List;
 
@@ -30,4 +28,11 @@ public interface AdminService {
     void deleteUser(int userId);
 
     void assignStoresToUser(AssignStoreRequest request);
+
+    // NEW Product Methods
+    Product addProduct(ProductRequest request);
+    List<Product> getAllProducts();
+    List<Product> searchProducts(String keyword); // Search
+    Product updateProduct(int productId, ProductRequest request);
+    void deleteProduct(int productId);
 }

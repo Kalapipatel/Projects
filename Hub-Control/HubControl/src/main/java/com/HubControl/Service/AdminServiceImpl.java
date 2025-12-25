@@ -1,15 +1,8 @@
 package com.HubControl.Service;
 
-import com.HubControl.Entity.Role;
-import com.HubControl.Entity.Store;
-import com.HubControl.Entity.User;
-import com.HubControl.Repo.RoleRepository;
-import com.HubControl.Repo.StoreRepository;
-import com.HubControl.Repo.UserRepository;
-import com.HubControl.dto.AdminDashboardDTO;
-import com.HubControl.dto.AssignStoreRequest;
-import com.HubControl.dto.StoreRequest;
-import com.HubControl.dto.UserRequest;
+import com.HubControl.Entity.*;
+import com.HubControl.Repo.*;
+import com.HubControl.dto.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -29,6 +22,12 @@ public class AdminServiceImpl implements AdminService {
 
     @Autowired
     private RoleRepository roleRepository;
+
+    @Autowired
+    private ProductRepository productRepository;
+
+    @Autowired
+    private SupplierRepository supplierRepository;
 
     @Override
     public int countTotalPickers(){ return userRepo.countTotalPickers(); }
@@ -197,5 +196,56 @@ public class AdminServiceImpl implements AdminService {
 
         // 4. Save User (cascades the update to the join table)
         userRepo.save(user);
+    }
+
+    // Product Manement
+    @Override
+    public Product addProduct(ProductRequest request) {
+        Product product = new Product();
+        mapRequestToProduct(request, product);
+        return productRepository.save(product);
+    }
+
+    @Override
+    public List<Product> getAllProducts() {
+        return productRepository.findAll();
+    }
+
+    @Override
+    public List<Product> searchProducts(String keyword) {
+        // Search by Name OR SKU
+        return productRepository.findByProductNameContainingIgnoreCaseOrSkuContainingIgnoreCase(keyword, keyword);
+    }
+
+    @Override
+    public Product updateProduct(int productId, ProductRequest request) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new RuntimeException("Product not found with ID: " + productId));
+
+        mapRequestToProduct(request, product);
+        return productRepository.save(product);
+    }
+
+    @Override
+    public void deleteProduct(int productId) {
+        if(productRepository.existsById(productId)) {
+            productRepository.deleteById(productId);
+        } else {
+            throw new RuntimeException("Product not found with ID: " + productId);
+        }
+    }
+
+    private void mapRequestToProduct(ProductRequest request, Product product) {
+        product.setSku(request.getSku());
+        product.setProductName(request.getProductName());
+        product.setDescription(request.getDescription());
+        product.setPrice(request.getPrice());
+        product.setImageUrl(request.getImageUrl());
+
+        if (request.getSupplierId() != null) {
+            Supplier supplier = supplierRepository.findById(request.getSupplierId())
+                    .orElseThrow(() -> new RuntimeException("Supplier not found"));
+            product.setSupplier(supplier);
+        }
     }
 }
