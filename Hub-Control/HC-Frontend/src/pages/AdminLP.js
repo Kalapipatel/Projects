@@ -4,18 +4,15 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { ShoppingBag, Users, DollarSign, Package, Store } from 'lucide-react';
 
 // Reusable Stat Card Component
-const StatCard = ({ title, value, icon, isDark }) => (
-  <div
-    className={`p-5 rounded-2xl border transition-all hover:scale-[1.02]
-      ${isDark ? 'bg-slate-900 border-slate-800 text-slate-200' : 'bg-white border-slate-200 text-slate-900'}
-    `}
-  >
+// UPDATED: Now uses Tailwind 'dark:' utility classes automatically
+const StatCard = ({ title, value, icon }) => (
+  <div className="p-5 rounded-2xl border transition-all hover:scale-[1.02] bg-white border-slate-200 text-slate-900 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-200">
     <div className="flex items-center justify-between">
       <div>
-        <p className={`text-xs font-bold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{title}</p>
+        <p className="text-xs font-bold text-slate-500 dark:text-slate-400">{title}</p>
         <h3 className="text-2xl font-extrabold mt-1">{value}</h3>
       </div>
-      <div className={`p-3 rounded-xl ${isDark ? 'bg-slate-800 text-blue-400' : 'bg-blue-50 text-blue-600'}`}>
+      <div className="p-3 rounded-xl bg-blue-50 text-blue-600 dark:bg-slate-800 dark:text-blue-400">
         {icon}
       </div>
     </div>
@@ -23,10 +20,21 @@ const StatCard = ({ title, value, icon, isDark }) => (
 );
 
 const AdminLP = ({ onNavigate }) => {
-  const [theme, setTheme] = useState(
-    document.documentElement.classList.contains('dark') ? 'dark' : 'light'
-  );
-  const isDark = theme === 'dark';
+  // We keep this state ONLY for Recharts (Charts need explicit hex colors, not classes)
+  const [isDark, setIsDark] = useState(document.documentElement.classList.contains('dark'));
+
+  // Observer ensures Charts update immediately when theme toggles
+  useEffect(() => {
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.attributeName === 'class') {
+          setIsDark(document.documentElement.classList.contains('dark'));
+        }
+      });
+    });
+    observer.observe(document.documentElement, { attributes: true });
+    return () => observer.disconnect();
+  }, []);
 
   // State for Dashboard Data
   const [dashboardData, setDashboardData] = useState(null);
@@ -35,28 +43,21 @@ const AdminLP = ({ onNavigate }) => {
   // Helper: Format number to currency
   const formatCurrency = (val) => `$${val?.toLocaleString()}`;
 
-  // Helper: Generate Last 7 Days Labels (excluding today)
-  // Backend sends [day-7, day-6, ..., day-1]
+  // Helper: Generate Last 7 Days Labels
   const processChartData = (weeklyData) => {
     if (!weeklyData || weeklyData.length === 0) return [];
-    
     const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     const today = new Date();
     const processedData = [];
 
     weeklyData.forEach((salesValue, index) => {
-      // Logic: Index 0 is 7 days ago. Index 6 is Yesterday.
-      // Offset = 7 - index. 
-      // If index is 6 (last item), offset is 1 (Yesterday).
       const d = new Date();
       d.setDate(today.getDate() - (7 - index));
-      
       processedData.push({
         day: days[d.getDay()],
         sales: salesValue
       });
     });
-
     return processedData;
   };
 
@@ -64,12 +65,10 @@ const AdminLP = ({ onNavigate }) => {
     const fetchDashboardData = async () => {
       try {
         const userId = localStorage.getItem('userId');
-        // If no userId is found, handle appropriately (e.g., redirect to login)
         if (!userId) {
             console.error("No User ID found");
             return;
         }
-
         const response = await fetch(`http://localhost:8080/api/admin/${userId}/dashboard`);
         if (response.ok) {
           const data = await response.json();
@@ -83,7 +82,6 @@ const AdminLP = ({ onNavigate }) => {
         setLoading(false);
       }
     };
-
     fetchDashboardData();
   }, []);
 
@@ -99,14 +97,8 @@ const AdminLP = ({ onNavigate }) => {
 
   return (
     <AdminLayout currentView="adminLp" onNavigate={onNavigate}>
-      <div
-        className={`min-h-screen transition-colors duration-300
-          ${isDark ? 'bg-slate-950 text-slate-200' : 'bg-slate-50 text-slate-900'}
-        `}
-      >
-        <div className={`max-w-7xl mx-auto w-full p-4 md:p-6 flex flex-col gap-6
-          ${isDark ? 'bg-slate-950 text-slate-200' : 'bg-slate-50 text-slate-900'}
-          `}>
+      <div className="min-h-screen transition-colors duration-300 bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-200">
+        <div className="max-w-7xl mx-auto w-full p-4 md:p-6 flex flex-col gap-6">
 
           {/* STATS */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -114,25 +106,21 @@ const AdminLP = ({ onNavigate }) => {
                 title="Total Revenue" 
                 value={formatCurrency(dashboardData?.totalRevenue)} 
                 icon={<DollarSign size={22} />} 
-                isDark={isDark} 
             />
             <StatCard 
                 title="Pending Orders" 
                 value={dashboardData?.pendingOrders} 
                 icon={<ShoppingBag size={22} />} 
-                isDark={isDark} 
             />
             <StatCard 
                 title="Processing" 
                 value={dashboardData?.processingOrders} 
                 icon={<Package size={22} />} 
-                isDark={isDark} 
             />
             <StatCard 
                 title="Completed" 
                 value={dashboardData?.completedOrders} 
                 icon={<ShoppingBag size={22} />} 
-                isDark={isDark} 
             />
           </div>
 
@@ -140,12 +128,8 @@ const AdminLP = ({ onNavigate }) => {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
             {/* SALES CHART */}
-            <div
-              className={`lg:col-span-2 p-5 rounded-2xl border animate-in fade-in slide-in-from-left-4 duration-500
-                ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}
-              `}
-            >
-              <h3 className={`text-lg font-bold mb-4 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+            <div className="lg:col-span-2 p-5 rounded-2xl border animate-in fade-in slide-in-from-left-4 duration-500 bg-white border-slate-200 dark:bg-slate-900 dark:border-slate-800">
+              <h3 className="text-lg font-bold mb-4 text-slate-700 dark:text-slate-300">
                 Weekly Sales
               </h3>
               <div className="h-80">
@@ -172,12 +156,8 @@ const AdminLP = ({ onNavigate }) => {
             </div>
 
             {/* USER DISTRIBUTION */}
-            <div
-              className={`p-5 rounded-2xl border animate-in fade-in slide-in-from-right-4 duration-500
-                ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}
-              `}
-            >
-              <h3 className={`text-lg font-bold mb-6 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+            <div className="p-5 rounded-2xl border animate-in fade-in slide-in-from-right-4 duration-500 bg-white border-slate-200 dark:bg-slate-900 dark:border-slate-800">
+              <h3 className="text-lg font-bold mb-6 text-slate-700 dark:text-slate-300">
                 User Distribution
               </h3>
 
@@ -189,16 +169,10 @@ const AdminLP = ({ onNavigate }) => {
                 ].map((item, idx) => (
                   <div
                     key={idx}
-                    className={`flex items-center justify-between p-3 rounded-xl
-                      ${isDark ? 'bg-slate-800/60' : 'bg-slate-100'}
-                    `}
+                    className="flex items-center justify-between p-3 rounded-xl bg-slate-100 dark:bg-slate-800/60"
                   >
                     <div className="flex items-center gap-3">
-                      <div
-                        className={`p-2 rounded-lg
-                          ${isDark ? 'bg-slate-700 text-blue-400' : 'bg-white text-blue-600'}
-                        `}
-                      >
+                      <div className="p-2 rounded-lg bg-white text-blue-600 dark:bg-slate-700 dark:text-blue-400">
                         {item.icon}
                       </div>
                       <p className="font-medium">{item.label}</p>

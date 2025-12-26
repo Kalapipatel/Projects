@@ -4,7 +4,11 @@ import AdminSidebar from './AdminSidebar';
 
 const AdminLayout = ({ children, currentView, onNavigate }) => {
   // Theme State
-  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('theme') === 'dark');
+  // NEW: Default to true (Dark) if theme is 'dark' OR if no theme is saved yet
+  const [darkMode, setDarkMode] = useState(() => {
+    const savedTheme = localStorage.getItem('theme');
+    return savedTheme ? savedTheme === 'dark' : true; 
+  });
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   
   // Get Admin Name from Local Storage (Assuming it was stored during login)
