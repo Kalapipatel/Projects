@@ -65,7 +65,7 @@ public class PickerServiceImpl implements PickerService {
         int generatedTaskId = savedTask.getTaskId();
 
         // after saving the task, order status will update from PENDING to PROCESSING
-        orderStatusPendingToPrecessing(firstPendingOrder.getOrderId());
+        orderStatusUpdate(firstPendingOrder.getOrderId(), OrderStatus.PROCESSING);
 
         // get order items and add into picking task items
         List<OrderItem> orderItems = firstPendingOrder.getOrderItems();
@@ -102,8 +102,8 @@ public class PickerServiceImpl implements PickerService {
     }
 
     @Override
-    public void orderStatusPendingToPrecessing(int orderId){
-        int rowsUpdated = orderRepo.updateOrderStatus(orderId, OrderStatus.PROCESSING);
+    public void orderStatusUpdate(int orderId, OrderStatus status){
+        int rowsUpdated = orderRepo.updateOrderStatus(orderId, status);
 
         if (rowsUpdated == 0) {
             throw new RuntimeException("Order not found: " + orderId);
@@ -169,6 +169,7 @@ public class PickerServiceImpl implements PickerService {
             }
 
             pickingTaskRepo.updateTotalOrderValue(taskId, total);
+            orderStatusUpdate(task.getOrder().getOrderId(), OrderStatus.COMPLETED);
         }
     }
 }
