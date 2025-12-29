@@ -32,7 +32,7 @@ public class User {
     @Column(name = "age")
     private int age;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)     // change made from laze
     @JoinColumn(name = "role_id", nullable = false)
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"}) // Fixes the Serialization Error
     private Role role;
