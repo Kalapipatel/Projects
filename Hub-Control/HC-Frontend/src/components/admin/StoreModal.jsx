@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { addStore, updateStore } from '../../services/adminService'; // Import Service
 
 const StoreModal = ({ isOpen, onClose, onSuccess, storeToEdit = null }) => {
   const [formData, setFormData] = useState({
@@ -38,29 +39,25 @@ const StoreModal = ({ isOpen, onClose, onSuccess, storeToEdit = null }) => {
     setLoading(true);
 
     const isEditMode = !!storeToEdit;
-    const url = isEditMode 
-      ? `http://localhost:8080/api/admin/updateStore/${storeToEdit.storeId}`
-      : 'http://localhost:8080/api/admin/addStore';
-    
-    const method = isEditMode ? 'PUT' : 'POST';
 
     try {
-        const response = await fetch(url, {
-            method: method,
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(formData)
-        });
-
-        if (response.ok) {
-            const data = isEditMode ? await response.json() : await response.json();
-            onSuccess(data, isEditMode); 
-            onClose();
+        let data;
+        
+        if (isEditMode) {
+            // Call Update Service (Pass ID and Data)
+            data = await updateStore(storeToEdit.storeId, formData);
         } else {
-            alert("Operation failed");
+            // Call Add Service (Pass Data only)
+            data = await addStore(formData);
         }
+
+        // Handle Success
+        onSuccess(data, isEditMode);
+        onClose();
+
     } catch (error) {
-        console.error("Error:", error);
-        alert("Server error");
+        // Error logging is handled in service, but we show alert to user
+        alert("Operation failed. Please check the server connection.");
     } finally {
         setLoading(false);
     }

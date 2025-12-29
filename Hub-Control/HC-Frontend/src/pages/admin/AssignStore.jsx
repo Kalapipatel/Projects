@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import AdminLayout from '../../components/admin/AdminLayout';
 import { User, CheckCircle, Store } from 'lucide-react';
+import { getAllUsers, getAllStores, assignStoresToUser } from '../../services/adminService'; // Import Service
 
 const AssignStore = ({ onNavigate }) => {
   const [users, setUsers] = useState([]);
@@ -14,19 +15,17 @@ const AssignStore = ({ onNavigate }) => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [usersRes, storesRes] = await Promise.all([
-          fetch('http://localhost:8080/api/admin/getAllUsers'),
-          fetch('http://localhost:8080/api/admin/getAllStores')
+        // REPLACED: Raw fetch with service calls
+        const [usersData, storesData] = await Promise.all([
+          getAllUsers(),
+          getAllStores()
         ]);
         
-        const usersData = await usersRes.json();
-        const storesData = await storesRes.json();
-        
-        // Filter out Admins (RoleId 1) - we only assign stores to Managers(2) and Pickers(3)
+        // Filter out Admins (RoleId 1)
         setUsers(usersData.filter(u => u.role.roleId !== 1)); 
         setStores(storesData);
       } catch (error) {
-        console.error("Error fetching data:", error);
+        console.error("Page load error:", error);
       } finally {
         setLoading(false);
       }
@@ -34,11 +33,9 @@ const AssignStore = ({ onNavigate }) => {
     fetchData();
   }, []);
 
-  // When a user is selected, load their assigned stores
   const handleUserSelect = (user) => {
     setSelectedUser(user);
-    // Assuming backend User object has a 'stores' array
-    // If not populated by backend, you might need to fetch user details individually
+    // Determine initially checked stores for this user
     const userStoreIds = user.stores ? user.stores.map(s => s.storeId) : [];
     setCheckedStoreIds(userStoreIds);
   };
@@ -56,32 +53,21 @@ const AssignStore = ({ onNavigate }) => {
     setSaving(true);
 
     try {
-      const response = await fetch('http://localhost:8080/api/admin/assignStore', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: selectedUser.userId,
-          storeIds: checkedStoreIds
-        })
-      });
+      // REPLACED: Raw fetch with service call
+      await assignStoresToUser(selectedUser.userId, checkedStoreIds);
 
-      if (response.ok) {
-        alert("Stores assigned successfully!");
-        // Update local state to reflect changes without refresh
-        setUsers(prev => prev.map(u => {
-            if(u.userId === selectedUser.userId) {
-                // Update the user's local store list so if we click them again, it's correct
-                const updatedStores = stores.filter(s => checkedStoreIds.includes(s.storeId));
-                return { ...u, stores: updatedStores };
-            }
-            return u;
-        }));
-      } else {
-        alert("Failed to assign stores.");
-      }
+      alert("Stores assigned successfully!");
+      
+      // Update local state to reflect changes
+      setUsers(prev => prev.map(u => {
+          if(u.userId === selectedUser.userId) {
+              const updatedStores = stores.filter(s => checkedStoreIds.includes(s.storeId));
+              return { ...u, stores: updatedStores };
+          }
+          return u;
+      }));
     } catch (error) {
-      console.error("Save error:", error);
-      alert("Server error.");
+      alert("Failed to assign stores. Please try again.");
     } finally {
       setSaving(false);
     }

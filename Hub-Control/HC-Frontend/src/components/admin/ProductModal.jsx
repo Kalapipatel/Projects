@@ -1,4 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
+import { addProduct, updateProduct } from '../../services/adminService'; // Import Service
 
 const ProductModal = ({ isOpen, onClose, onSuccess, productToEdit = null }) => {
   const [formData, setFormData] = useState({
@@ -33,11 +35,7 @@ const ProductModal = ({ isOpen, onClose, onSuccess, productToEdit = null }) => {
     setLoading(true);
 
     const isEditMode = !!productToEdit;
-    const url = isEditMode 
-      ? `http://localhost:8080/api/admin/updateProduct/${productToEdit.productId}`
-      : 'http://localhost:8080/api/admin/addProduct';
-    const method = isEditMode ? 'PUT' : 'POST';
-
+    
     // Ensure price/supplierId are numbers
     const payload = {
         ...formData,
@@ -46,21 +44,21 @@ const ProductModal = ({ isOpen, onClose, onSuccess, productToEdit = null }) => {
     };
 
     try {
-        const response = await fetch(url, {
-            method: method,
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-
-        if (response.ok) {
-            const data = await response.json();
-            onSuccess(data, isEditMode);
-            onClose();
+        let data;
+        
+        if (isEditMode) {
+            // REPLACED: Raw fetch with service call
+            data = await updateProduct(productToEdit.productId, payload);
         } else {
-            alert("Operation failed");
+            // REPLACED: Raw fetch with service call
+            data = await addProduct(payload);
         }
+
+        onSuccess(data, isEditMode);
+        onClose();
+
     } catch (error) {
-        console.error("Error:", error);
+        alert("Operation failed. Please check your inputs.");
     } finally {
         setLoading(false);
     }

@@ -67,7 +67,7 @@ const TaskDetailView = ({ initialItems, taskMetadata, onBack, onCompleteTask, is
           <ArrowLeft size={24} />
         </button>
         <div className="flex-1">
-          <div className="flex items-center gap-2 text-sm font-mono opacity-80 mb-1">
+          <div className={`flex items-center gap-2 text-sm font-mono opacity-80 mb-1 ${isDark ? 'bg-slate-800/50 border-slate-800 text-slate-400' : 'bg-slate-50 border-slate-100 text-slate-500'}`}>
              <span>ORD #{taskMetadata?.orderId || '---'}</span>
              <span className="opacity-30">|</span>
              <span>TASK #{taskMetadata?.taskId || '---'}</span>

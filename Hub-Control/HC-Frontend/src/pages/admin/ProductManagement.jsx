@@ -1,7 +1,9 @@
+
 import React, { useState, useEffect } from 'react';
 import AdminLayout from '../../components/admin/AdminLayout';
 import ProductModal from '../../components/admin/ProductModal';
 import { Search, Package, Image as ImageIcon } from 'lucide-react';
+import { getAllProducts, searchProducts, deleteProduct } from '../../services/adminService'; // Import Service
 
 const ProductManagement = ({ onNavigate }) => {
   const [products, setProducts] = useState([]);
@@ -15,16 +17,15 @@ const ProductManagement = ({ onNavigate }) => {
     fetchProducts();
   }, []);
 
-  // Search Logic (Debounced slightly or trigger on Enter)
-  // For simplicity, we trigger fetch when search query changes or clears
+  // Search Logic (Debounced)
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
       if (searchQuery.trim()) {
-        fetchSearchResults(searchQuery);
+        handleSearch(searchQuery);
       } else {
         fetchProducts(); // Reload all if search cleared
       }
-    }, 500); // 500ms delay to wait for user to stop typing
+    }, 500);
 
     return () => clearTimeout(delayDebounceFn);
   }, [searchQuery]);
@@ -32,46 +33,42 @@ const ProductManagement = ({ onNavigate }) => {
   const fetchProducts = async () => {
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:8080/api/admin/getAllProducts');
-      if (response.ok) {
-        const data = await response.json();
-        setProducts(data);
-      }
-    } catch (error) { console.error(error); } 
-    finally { setLoading(false); }
+      // REPLACED: Raw fetch with service call
+      const data = await getAllProducts();
+      setProducts(data);
+    } catch (error) {
+      // Error handled in service
+    } finally { 
+      setLoading(false); 
+    }
   };
 
-  const fetchSearchResults = async (keyword) => {
+  const handleSearch = async (keyword) => {
     setLoading(true);
     try {
-      const response = await fetch(`http://localhost:8080/api/admin/searchProducts?keyword=${keyword}`);
-      if (response.ok) {
-        const data = await response.json();
-        setProducts(data);
-      }
-    } catch (error) { console.error(error); }
-    finally { setLoading(false); }
+      // REPLACED: Raw fetch with service call
+      const data = await searchProducts(keyword);
+      setProducts(data);
+    } catch (error) {
+      console.error(error);
+    } finally { 
+      setLoading(false); 
+    }
   };
 
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this product?")) return;
     
     try {
-        const response = await fetch(`http://localhost:8080/api/admin/deleteProduct/${id}`, { 
-            method: 'DELETE' 
-        });
-
-        if (response.ok) {
-            // Success: Remove from UI
-            setProducts(prev => prev.filter(p => p.productId !== id));
-        } else {
-            // Error: Read the text message sent from Backend (AdminController)
-            const errorMsg = await response.text();
-            alert(`Failed to delete: ${errorMsg}`);
-        }
+        // REPLACED: Raw fetch with service call
+        await deleteProduct(id);
+        
+        // Success: Remove from UI
+        setProducts(prev => prev.filter(p => p.productId !== id));
     } catch (error) { 
-        console.error(error);
-        alert("Server connection failed.");
+        // Axios stores the backend error response in error.response.data
+        const errorMsg = error.response?.data || "Server connection failed.";
+        alert(`Failed to delete: ${errorMsg}`);
     }
   };
 

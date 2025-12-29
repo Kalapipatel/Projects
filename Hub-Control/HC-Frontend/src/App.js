@@ -6,9 +6,9 @@ import LoginPage from './pages/LoginPage';
 import AdminLP from './pages/AdminLP';
 import ManagerLP from './pages/ManagerLP';
 import PickerLP from './pages/PickerLP';
-import ManagePickers from './pages/ManagePickers';
-import Inventory from './pages/Inventory';
-import OrderQueue from './pages/OrderQueue';
+import ManagePickers from './pages/manager/ManagePickers';
+import Inventory from './pages/manager/Inventory';
+import OrderQueue from './pages/manager/OrderQueue';
 
 // --- NEW IMPORTS FOR ADMIN SUB-PAGES ---
 import StoreManagement from './pages/admin/StoreManagement';

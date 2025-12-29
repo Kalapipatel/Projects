@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { addUser, updateUser } from '../../services/adminService'; // Import Service
 
 const UserModal = ({ isOpen, onClose, onSuccess, userToEdit = null }) => {
   const [formData, setFormData] = useState({
@@ -45,30 +46,24 @@ const UserModal = ({ isOpen, onClose, onSuccess, userToEdit = null }) => {
     setLoading(true);
 
     const isEditMode = !!userToEdit;
-    const url = isEditMode 
-      ? `http://localhost:8080/api/admin/updateUser/${userToEdit.userId}`
-      : 'http://localhost:8080/api/admin/addUser';
-    
-    const method = isEditMode ? 'PUT' : 'POST';
-
     const payload = { ...formData, roleId: parseInt(formData.roleId), age: parseInt(formData.age) };
 
     try {
-        const response = await fetch(url, {
-            method: method,
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
+        let data;
 
-        if (response.ok) {
-            const data = await response.json();
-            onSuccess(data, isEditMode);
-            onClose();
+        if (isEditMode) {
+            // REPLACED: Raw fetch with service call
+            data = await updateUser(userToEdit.userId, payload);
         } else {
-            alert("Operation failed");
+            // REPLACED: Raw fetch with service call
+            data = await addUser(payload);
         }
+
+        onSuccess(data, isEditMode);
+        onClose();
+
     } catch (error) {
-        console.error("Error:", error);
+        alert("Operation failed. Please try again.");
     } finally {
         setLoading(false);
     }

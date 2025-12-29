@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import AdminLayout from '../../components/admin/AdminLayout';
 import UserModal from '../../components/admin/UserModal';
+import { getAllUsers, deleteUser } from '../../services/adminService'; // Import Service
 
 const UserManagement = ({ onNavigate }) => {
   const [users, setUsers] = useState([]);
@@ -15,13 +16,11 @@ const UserManagement = ({ onNavigate }) => {
 
   const fetchUsers = async () => {
     try {
-      const response = await fetch('http://localhost:8080/api/admin/getAllUsers');
-      if (response.ok) {
-        const data = await response.json();
-        setUsers(data);
-      }
+      // REPLACED: Raw fetch with service call
+      const data = await getAllUsers();
+      setUsers(data);
     } catch (error) {
-      console.error("Failed to fetch users", error);
+      // Error handled in service
     } finally {
       setLoading(false);
     }
@@ -40,11 +39,12 @@ const UserManagement = ({ onNavigate }) => {
   const handleDelete = async (userId) => {
     if (!window.confirm("Are you sure? This user will lose access immediately.")) return;
     try {
-        const response = await fetch(`http://localhost:8080/api/admin/deleteUser/${userId}`, { method: 'DELETE' });
-        if (response.ok) {
-            setUsers(prev => prev.filter(u => u.userId !== userId));
-        }
-    } catch (error) { console.error(error); }
+        // REPLACED: Raw fetch with service call
+        await deleteUser(userId);
+        setUsers(prev => prev.filter(u => u.userId !== userId));
+    } catch (error) { 
+        alert("Failed to delete user. Ensure they are not assigned to active tasks.");
+    }
   };
 
   const handleModalSuccess = (resultUser, isEditMode) => {

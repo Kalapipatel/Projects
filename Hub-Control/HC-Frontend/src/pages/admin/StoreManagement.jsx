@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import AdminLayout from '../../components/admin/AdminLayout';
-import StoreModal from '../../components/admin/StoreModal'; // Updated import
+import StoreModal from '../../components/admin/StoreModal';
+import { getAllStores, deleteStore } from '../../services/adminService'; // Import Service
 
 const StoreManagement = ({ onNavigate }) => {
   const [stores, setStores] = useState([]);
@@ -14,13 +15,12 @@ const StoreManagement = ({ onNavigate }) => {
 
   const fetchStores = async () => {
     try {
-      const response = await fetch('http://localhost:8080/api/admin/getAllStores');
-      if (response.ok) {
-        const data = await response.json();
-        setStores(data);
-      }
+      // REPLACED: Raw fetch with service call
+      const data = await getAllStores();
+      setStores(data);
     } catch (error) {
-      console.error("Failed to fetch stores", error);
+      // Error handled in service, but we catch here to stop UI loading
+      console.error("Page load error:", error);
     } finally {
       setLoading(false);
     }
@@ -40,17 +40,13 @@ const StoreManagement = ({ onNavigate }) => {
     if (!window.confirm("Are you sure you want to delete this store? This action cannot be undone.")) return;
 
     try {
-        const response = await fetch(`http://localhost:8080/api/admin/deleteStore/${storeId}`, {
-            method: 'DELETE'
-        });
-
-        if (response.ok) {
-            setStores(prev => prev.filter(s => s.storeId !== storeId));
-        } else {
-            alert("Failed to delete store. It might have active inventory or users.");
-        }
+        // REPLACED: Raw fetch with service call
+        await deleteStore(storeId);
+        
+        // Update UI only if API succeeds
+        setStores(prev => prev.filter(s => s.storeId !== storeId));
     } catch (error) {
-        console.error("Delete error:", error);
+        alert("Failed to delete store. It might have active inventory or users.");
     }
   };
 
