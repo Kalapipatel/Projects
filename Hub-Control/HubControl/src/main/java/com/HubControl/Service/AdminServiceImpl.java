@@ -4,6 +4,7 @@ import com.HubControl.Entity.*;
 import com.HubControl.Repo.*;
 import com.HubControl.dto.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -28,6 +29,9 @@ public class AdminServiceImpl implements AdminService {
 
     @Autowired
     private SupplierRepository supplierRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     @Override
     public int countTotalPickers(){ return userRepo.countTotalPickers(); }
@@ -167,9 +171,11 @@ public class AdminServiceImpl implements AdminService {
         user.setActive(request.isActive());
 
         // Only update password if provided (simple check)
-        // In a real production scenario, use BCryptPasswordEncoder here
+        // Hash the password before setting it
         if (request.getPassword() != null && !request.getPassword().isEmpty()) {
-            user.setHashedPassword(request.getPassword());
+            // Encode the raw password
+            String encodedPassword = passwordEncoder.encode(request.getPassword());
+            user.setHashedPassword(encodedPassword);
         }
 
         // Fetch and set Role
