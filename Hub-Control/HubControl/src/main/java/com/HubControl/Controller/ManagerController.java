@@ -50,9 +50,4 @@ public class ManagerController {
         return ResponseEntity.ok(orderQueue);
     }
 }
-
-/*
-* john.doe@example.com / john_pass123
-* bob.brown@example.com / bob_pass123
-* lucy.king@example.com / lucy_pass123
-*/
+ 
