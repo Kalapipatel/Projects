@@ -4,6 +4,9 @@ import com.HubControl.Entity.*;
 import com.HubControl.Repo.*;
 import com.HubControl.dto.*;
 import org.springframework.beans.factory.annotation.Autowired;
+//import org.springframework.cache.annotation.CacheEvict;
+//import org.springframework.cache.annotation.Cacheable;
+//import org.springframework.cache.annotation.Caching;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -52,6 +55,7 @@ public class AdminServiceImpl implements AdminService {
     public int countTotalStores(){ return storeRepo.countTotalStores(); }
 
     @Override
+//    @Cacheable(value = "adminDashboard")
     public AdminDashboardDTO getDashboardData(){
         AdminDashboardDTO dto = new AdminDashboardDTO();
 
@@ -86,6 +90,12 @@ public class AdminServiceImpl implements AdminService {
 
     // Store Management  --------------------------
     @Override
+    // When adding a store, we MUST clear the 'stores' list cache so the new store appears.
+    // We also clear 'adminDashboard' because the store counts on the dashboard have changed.
+//    @Caching(evict = {
+//            @CacheEvict(value = "stores", allEntries = true),
+//            @CacheEvict(value = "adminDashboard", allEntries = true)
+//    })
     public Store addStore(StoreRequest request) {
         Store store = new Store();
         store.setStoreName(request.getStoreName());
@@ -97,11 +107,18 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
+//    @Cacheable(cacheNames = "stores")
     public List<Store> getAllStores() {
         return storeRepo.findAll();
     }
 
     @Override
+    // If you had a method getStoreById(id), you could use @CachePut(value="store", key="#storeId") here.
+    // But since we are affecting the main List, we must evict the list to ensure data consistency.
+//    @Caching(evict = {
+//            @CacheEvict(value = "stores", allEntries = true),
+//            @CacheEvict(value = "adminDashboard", allEntries = true)
+//    })
     public Store updateStore(int storeId, StoreRequest request) {
         Optional<Store> optionalStore = storeRepo.findById(storeId);
 
@@ -119,6 +136,10 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
+//    @Caching(evict = {
+//            @CacheEvict(value = "stores", allEntries = true),
+//            @CacheEvict(value = "adminDashboard", allEntries = true)
+//    })
     public void deleteStore(int storeId) {
         // Note: In a real production system with foreign keys,
         // you might need to handle related data (orders/inventory) before deleting.
@@ -132,6 +153,7 @@ public class AdminServiceImpl implements AdminService {
 
     // User Management  --------------------------
     @Override
+//    @CacheEvict(value = {"storePickers", "storeDashboard", "managerDashboard"}, allEntries = true)
     public User addUser(UserRequest request) {
         User user = new User();
         mapRequestToUser(request, user);
@@ -139,11 +161,16 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
+//    @Cacheable(cacheNames = "users")
     public List<User> getAllUsers() {
         return userRepo.findAll();
     }
 
     @Override
+//    @Caching(evict = {
+//            @CacheEvict(value = "users", allEntries = true),
+//            @CacheEvict(value = "adminDashboard", allEntries = true)
+//    })
     public User updateUser(int userId, UserRequest request) {
         User user = userRepo.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
@@ -153,6 +180,10 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
+//    @Caching(evict = {
+//            @CacheEvict(value = "users", allEntries = true),
+//            @CacheEvict(value = "adminDashboard", allEntries = true)
+//    })
     public void deleteUser(int userId) {
         if(userRepo.existsById(userId)) {
             userRepo.deleteById(userId);
@@ -206,6 +237,10 @@ public class AdminServiceImpl implements AdminService {
 
     // Product Manement
     @Override
+//    @Caching(evict = {
+//            @CacheEvict(value = "products", allEntries = true),
+//            @CacheEvict(value = "adminDashboard", allEntries = true) // Product counts changed
+//    })
     public Product addProduct(ProductRequest request) {
         Product product = new Product();
         mapRequestToProduct(request, product);
@@ -213,6 +248,7 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
+//    @Cacheable(cacheNames = "products")
     public List<Product> getAllProducts() {
         return productRepository.findAll();
     }
@@ -224,6 +260,10 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
+//    @Caching(evict = {
+//            @CacheEvict(value = "products", allEntries = true),
+//            @CacheEvict(value = "adminDashboard", allEntries = true)
+//    })
     public Product updateProduct(int productId, ProductRequest request) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Product not found with ID: " + productId));
@@ -233,6 +273,10 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
+//    @Caching(evict = {
+//            @CacheEvict(value = "products", allEntries = true),
+//            @CacheEvict(value = "adminDashboard", allEntries = true)
+//    })
     public void deleteProduct(int productId) {
         if(productRepository.existsById(productId)) {
             productRepository.deleteById(productId);

@@ -6,6 +6,7 @@ import com.HubControl.dto.PickingTaskDTO;
 import com.HubControl.dto.TaskItemDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -43,6 +44,7 @@ public class PickerServiceImpl implements PickerService {
     }
 
     @Override
+    @Transactional
     public PickingTaskDTO requestOrder(int pickerId, int storeId){
         PickingTaskDTO taskDTO = new PickingTaskDTO();
         PickingTask task = new PickingTask();
@@ -139,6 +141,7 @@ public class PickerServiceImpl implements PickerService {
     }
 
     @Override
+    @Transactional // Critical: Updates Task, Inventory, AND Order. Must be atomic.
     public void changeTaskStatus(int taskId, PickingTaskStatus taskStatus){
         int rowsUpdated = pickingTaskRepo.updateTaskStatus(taskId, taskStatus);
 

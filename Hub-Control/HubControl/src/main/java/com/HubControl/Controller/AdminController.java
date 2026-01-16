@@ -118,10 +118,3 @@ public class AdminController {
         }
     }
 }
-
-/*
- * john.doe@example.com / john_pass123
- * bob@example.com / 12345
- * sam@example.com / 12345
- * lucy.king@example.com / lucy_pass123
- */

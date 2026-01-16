@@ -42,11 +42,11 @@ public class Product {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "supplier_id")
-    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+    @JsonIgnore
     private Supplier supplier;
 
     @OneToMany(mappedBy = "product")
-    @JsonManagedReference
+    @JsonIgnore
     private Set<Inventory> inventory;
 
     @OneToMany(mappedBy = "product")
@@ -172,3 +172,4 @@ public class Product {
         this.orderItems = orderItems;
     }
 }
+

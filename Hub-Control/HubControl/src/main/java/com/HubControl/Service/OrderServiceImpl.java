@@ -3,6 +3,7 @@ package com.HubControl.Service;
 import com.HubControl.Entity.Order;
 import com.HubControl.Repo.OrderRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
