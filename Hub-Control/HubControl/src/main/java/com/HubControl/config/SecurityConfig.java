@@ -46,6 +46,7 @@ public class SecurityConfig {
                 // 3. Define URL Access Rules
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**", "/public/**", "/error").permitAll()
+                        .requestMatchers("/ws/**").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         // Note: Ensure your DB roles are stored as "ROLE_MANAGER" or just "MANAGER" depending on your CustomUserDetailsService
                         .requestMatchers("/api/manager/**").hasAnyRole("MANAGER", "ADMIN")
@@ -74,7 +75,7 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
 
         // ALLOW YOUR FRONTEND URL
-        configuration.setAllowedOrigins(List.of("http://localhost:3000"));
+        configuration.setAllowedOrigins(List.of("http://localhost:3000", "http://localhost:5173"));
 
         // ALLOW HTTP METHODS
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));

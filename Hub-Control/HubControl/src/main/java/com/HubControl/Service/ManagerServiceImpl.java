@@ -48,7 +48,7 @@ public class ManagerServiceImpl implements ManagerService {
     }
 
     @Override
-    @Cacheable(value = "managerDashboard")
+//    @Cacheable(value = "managerDashboard")
     public ManagerDashboardDTO getDashboardData(int managerId){
         ManagerDashboardDTO dashboard = new ManagerDashboardDTO();
 
@@ -82,7 +82,7 @@ public class ManagerServiceImpl implements ManagerService {
     }
 
     @Override
-    @Cacheable(value = "storeDashboard")
+//    @Cacheable(value = "storeDashboard")
     public StoreDashboardDTO getStoreData(int storeId){
         StoreDashboardDTO storeDashboardDTO = new StoreDashboardDTO();
 
@@ -106,7 +106,7 @@ public class ManagerServiceImpl implements ManagerService {
     }
 
     @Override
-    @Cacheable(value = "storeAlerts")
+//    @Cacheable(value = "storeAlerts")
     public List<AlertDTO> getAlerts(int storeId){
         List<AlertDTO> alerts = new ArrayList<>();
 
@@ -129,21 +129,21 @@ public class ManagerServiceImpl implements ManagerService {
     }
 
     @Override
-    @Cacheable(value = "storePickers")
+//    @Cacheable(value = "storePickers")
     public List<User> getStorePickers(int storeId) {
         List<User> pickers = userRepo.findPickersByStoreId(storeId);
         return pickers;
     }
 
     @Override
-    @Cacheable(value = "storeInventory")
+//    @Cacheable(value = "storeInventory")
     public List<Inventory> getStoreInventory(int storeId) {
         List<Inventory> inventory = inventoryRepo.findByStoreId(storeId);
         return inventory;
     }
 
     @Override
-    @Cacheable(value = "storeOrderQueue")
+//    @Cacheable(value = "storeOrderQueue")
     public List<Order> getOrderQueue(int storeId) {
         List<Order> orderQueue = orderService.getOrderQueue(storeId);
         return orderQueue;

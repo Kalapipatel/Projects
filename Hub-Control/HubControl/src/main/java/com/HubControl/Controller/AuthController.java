@@ -20,7 +20,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(origins = "http://localhost:3000") // Allow React to access this
+//@CrossOrigin(origins = "http://localhost:3000") // Allow React to access this
 public class AuthController {
 
     @Autowired
@@ -103,60 +103,3 @@ public class AuthController {
     }
 
 }
-
-//
-//@Autowired
-//private AuthenticationManager authenticationManager; // We configured this in SecurityConfig
-//
-//@Autowired
-//private JwtUtils jwtUtils;
-//
-//@PostMapping("/login")
-//public ResponseEntity<?> loginUser(@RequestBody LoginRequest loginRequest) {
-//
-//    // 1. Authenticate using Spring Security
-//    // This automatically calls UserDetailsService and checks the password hash
-//    Authentication authentication = authenticationManager.authenticate(
-//            new UsernamePasswordAuthenticationToken(
-//                    loginRequest.getEmail(),
-//                    loginRequest.getPassword()
-//            )
-//    );
-//
-//    // 2. If we reach here, login was successful!
-//    SecurityContextHolder.getContext().setAuthentication(authentication);
-//    CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-//
-//    // 3. Generate Token
-//    String jwtToken = jwtUtils.generateToken(userDetails);
-//
-//    // 4. Determine Target Page (Logic from your original code)
-//    String targetPage = "";
-//    int roleId = userDetails.getUser().getRole().getRoleId();
-//    switch (roleId) {
-//        case 1:
-//            targetPage = "adminLp";
-//            break;
-//        case 2:
-//            targetPage = "managerLp";
-//            break;
-//        case 3:
-//            targetPage = "pickerLp";
-//            break;
-//        default:
-//            targetPage = "login";
-//    }
-//
-//    boolean isActive = userDetails.getUser().isActive();
-//    int active = isActive ? 1 : 0;
-//
-//    // 5. Return Token + User Info
-//    return ResponseEntity.ok(new LoginResponse(
-//            jwtToken, // Send token instead of just "Success" message
-//            targetPage,
-//            userDetails.getUser().getUserId(),
-//            userDetails.getUser().getUsername(),
-//            userDetails.getUser().getRole().getRoleId(),
-//            active
-//    ));
-//}
